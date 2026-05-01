@@ -1,0 +1,25 @@
+# Android / Gradle
+.gradle/
+build/
+.idea/
+local.properties
+*.iml
+captures/
+.cxx/
+app/build/
+
+# Kotlin metadata
+.kotlin/
+
+# Claude session files
+.claude/
+
+# Debug / scratch files in project root
+*.log
+*.txt
+*.png
+*.html
+*.xml
+!app/**/*.xml
+!*.gradle
+com/

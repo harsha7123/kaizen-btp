@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FedEx-style Shipping Label -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FFFFFF">
+
+    <!-- Purple FedEx header -->
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:background="#4D148C" android:padding="10dp"
+        android:gravity="center_vertical" android:orientation="horizontal">
+        <TextView
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:text="FedEx"
+            android:textColor="#FFFFFF" android:textSize="22sp" android:textStyle="bold"
+            android:fontFamily="sans-serif-condensed" android:letterSpacing="-0.03"/>
+        <TextView android:id="@+id/fedexService"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="PRIORITY OVERNIGHT"
+            android:textColor="#FF6600" android:textSize="11sp" android:textStyle="bold"/>
+    </LinearLayout>
+
+    <!-- Tracking number band -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:background="#F3E5F5" android:padding="8dp" android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="TRACKING: " android:textSize="11sp" android:textColor="#6A1B9A"
+            android:textStyle="bold" android:fontFamily="monospace"/>
+        <TextView android:id="@+id/fedexTracking"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textSize="13sp" android:textStyle="bold" android:fontFamily="monospace"
+            android:textColor="#4D148C"/>
+    </LinearLayout>
+
+    <!-- FROM / TO -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:padding="10dp">
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="FROM:" android:textSize="10sp" android:textColor="#6A1B9A"
+                android:textStyle="bold" android:fontFamily="monospace"/>
+            <TextView android:id="@+id/fedexFrom"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textSize="12sp" android:fontFamily="monospace" android:textColor="#1A1A1A"/>
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="TO:" android:textSize="10sp" android:textColor="#6A1B9A"
+                android:textStyle="bold" android:fontFamily="monospace"/>
+            <TextView android:id="@+id/fedexTo"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textSize="12sp" android:fontFamily="monospace" android:textColor="#1A1A1A"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Delivery ref -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:background="#F3E5F5" android:padding="8dp" android:orientation="horizontal">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="REF / DELIVERY: " android:textSize="10sp" android:textColor="#6A1B9A"
+            android:fontFamily="monospace"/>
+        <TextView android:id="@+id/fedexDelivery"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textSize="10sp" android:fontFamily="monospace" android:textStyle="bold"/>
+    </LinearLayout>
+
+    <!-- Barcode -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="10dp" android:gravity="center_horizontal">
+        <ImageView android:id="@+id/fedexBarcode"
+            android:layout_width="match_parent" android:layout_height="70dp"
+            android:scaleType="fitXY" android:contentDescription="FedEx barcode"/>
+        <TextView android:id="@+id/fedexTrackingNum"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textSize="11sp" android:fontFamily="monospace" android:layout_marginTop="2dp"/>
+    </LinearLayout>
+
+    <!-- Orange footer -->
+    <View android:layout_width="match_parent" android:layout_height="6dp"
+        android:background="#FF6600"/>
+
+</LinearLayout>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Standard Box Shipping Label -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FFFFFF">
+
+    <!-- Grey header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#37474F"
+        android:padding="10dp"
+        android:gravity="center_vertical">
+        <TextView
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:text="BOX LABEL"
+            android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold"
+            android:fontFamily="monospace" android:letterSpacing="0.15"/>
+        <TextView android:id="@+id/boxLabelDate"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textColor="#B0BEC5" android:textSize="11sp" android:fontFamily="monospace"/>
+    </LinearLayout>
+
+    <!-- Delivery number band -->
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:background="#ECEFF1" android:padding="10dp" android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="DELIVERY: " android:textSize="12sp" android:textColor="#546E7A"
+            android:fontFamily="monospace"/>
+        <TextView android:id="@+id/boxLabelDelivery"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textSize="18sp" android:textStyle="bold" android:fontFamily="monospace"
+            android:textColor="#263238"/>
+    </LinearLayout>
+
+    <!-- FROM / TO section -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:padding="10dp">
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="FROM:" android:textSize="10sp" android:textColor="#546E7A"
+                android:textStyle="bold" android:fontFamily="monospace"/>
+            <TextView android:id="@+id/boxLabelFrom"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textSize="12sp" android:fontFamily="monospace" android:textColor="#263238"/>
+        </LinearLayout>
+        <View android:layout_width="1dp" android:layout_height="match_parent"
+            android:background="#CFD8DC" android:layout_marginEnd="10dp"/>
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="TO:" android:textSize="10sp" android:textColor="#546E7A"
+                android:textStyle="bold" android:fontFamily="monospace"/>
+            <TextView android:id="@+id/boxLabelTo"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:textSize="12sp" android:fontFamily="monospace" android:textColor="#263238"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <View android:layout_width="match_parent" android:layout_height="1dp"
+        android:background="#CFD8DC" android:layout_marginStart="10dp" android:layout_marginEnd="10dp"/>
+
+    <!-- Barcode -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="10dp" android:gravity="center_horizontal">
+        <ImageView android:id="@+id/boxBarcode"
+            android:layout_width="match_parent" android:layout_height="70dp"
+            android:scaleType="fitXY" android:contentDescription="Box barcode"/>
+        <TextView android:id="@+id/boxLabelDeliveryNum"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textSize="11sp" android:fontFamily="monospace" android:layout_marginTop="2dp"/>
+    </LinearLayout>
+
+    <!-- Comments -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:background="#ECEFF1" android:padding="8dp" android:orientation="horizontal">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="NOTES: " android:textSize="10sp" android:textColor="#546E7A"
+            android:fontFamily="monospace"/>
+        <TextView android:id="@+id/boxLabelComments"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:textSize="10sp" android:fontFamily="monospace" android:textColor="#263238"/>
+    </LinearLayout>
+
+</LinearLayout>

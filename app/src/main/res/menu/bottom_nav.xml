@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@drawable/ic_nav_home"
+        android:title="Inspections" />
+    <item
+        android:id="@+id/nav_delivery"
+        android:icon="@drawable/ic_nav_delivery"
+        android:title="Delivery" />
+    <item
+        android:id="@+id/nav_rf"
+        android:icon="@drawable/ic_nav_rf"
+        android:title="RF Menu" />
+    <item
+        android:id="@+id/nav_profile"
+        android:icon="@drawable/ic_nav_profile"
+        android:title="Profile" />
+</menu>
