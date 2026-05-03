@@ -1120,3 +1120,43 @@ ForkQA-srv    started           1/1         256M     f6c0e9f2trial-dev-forkqa-sr
 - [ ] Backend URL verified with `curl` before building APK
 - [ ] Android app ID in `build.gradle` matches Mobile Services App ID scheme (`com.sap.<appid>`)
 - [ ] `<data android:scheme="com.sap.<appid>" android:host="oauth" />` in `AndroidManifest.xml` matches `REDIRECT_URL`
+
+---
+
+## 9. Claude Code MCP Servers
+
+MCP (Model Context Protocol) servers extend Claude Code with SAP-specific tooling. Run each command once to register them in your local Claude config.
+
+### Setup Commands
+
+```bash
+# SAP GitHub Enterprise (internal)
+claude mcp add github-wdf --transport http https://github-mcp.wdf.sap.corp/mcp \
+  --header "Authorization: Bearer <YOUR_GITHUB_WDF_TOKEN>" \
+  --header "X-MCP-Lockdown: true"
+
+# SAP Fiori tools
+claude mcp add fiori --transport stdio -- npx -y @sap-ux/fiori-mcp-server@0.6.51 fiori-mcp
+
+# SAP MDK (Mobile Development Kit)
+claude mcp add mdk --transport stdio -- npx -y @sap/mdk-mcp-server@0.3.7 mdk-mcp
+
+# SAP CAP (Cloud Application Programming model)
+claude mcp add cap --transport stdio -- npx -y @cap-js/mcp-server@0.0.4
+
+# SAP ADT (ABAP Development Tools — requires local ADT server on port 2236)
+claude mcp add adt --transport http http://localhost:2236/mcp
+```
+
+### Server Reference
+
+| Name | Transport | Purpose |
+|------|-----------|---------|
+| `github-wdf` | HTTP | SAP internal GitHub Enterprise — browse repos, PRs, issues |
+| `fiori` | stdio | SAP Fiori UX tools — UI5 scaffolding, OData annotations |
+| `mdk` | stdio | SAP Mobile Development Kit — MDK app generation and metadata |
+| `cap` | stdio | SAP CAP framework — CDS schema, service, and handler assistance |
+| `adt` | HTTP | ABAP Development Tools — requires local ADT bridge on `localhost:2236` |
+
+> **Note:** The `github-wdf` token is a personal access token from `github.tools.sap`. Replace `<YOUR_GITHUB_WDF_TOKEN>` with your actual token. The `adt` server requires the SAP ADT MCP bridge to be running locally before use.
+
