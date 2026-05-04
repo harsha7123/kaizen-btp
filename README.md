@@ -1160,3 +1160,119 @@ claude mcp add adt --transport http http://localhost:2236/mcp
 
 > **Note:** The `github-wdf` token is a personal access token from `github.tools.sap`. Replace `<YOUR_GITHUB_WDF_TOKEN>` with your actual token. The `adt` server requires the SAP ADT MCP bridge to be running locally before use.
 
+---
+
+## 10. Feature Log — Recent Additions
+
+### 10a. Dashboard Landing Page
+
+A groovy 2×3 tile grid replaces the old Inspections list as the app entry point.
+
+**Flow:** Splash → Questionnaire → **Dashboard** → (tap tile) → feature screen
+
+| Tile | Color | Destination |
+|------|-------|-------------|
+| Inspections | Deep Blue `#1565C0` | `MainActivity` (inspection list) |
+| Deliveries | Deep Green `#2E7D32` | `DeliveryListActivity` |
+| RF Menu | Deep Purple `#4527A0` | `RFMenuActivity` |
+| Labels | Teal `#00695C` | `LabelActivity` |
+| Report | Deep Red `#B71C1C` | `ReportActivity` |
+| Profile | Deep Orange `#E65100` | `QuestionnaireActivity` |
+
+- Header shows time-based greeting ("Good morning, Sudhakar"), site name, and today's date
+- Each tile has a white icon, title, and subtitle
+- `DashboardActivity.kt` — `activity_dashboard.xml`
+- Back arrow added to `MainActivity` toolbar to return to dashboard
+
+---
+
+### 10b. Label Printing — Demo Data
+
+A **"Load Demo Data"** button was added to the Labels screen for testing without a backend.
+
+Each tap cycles through 5 pre-built `DeliveryRow` records:
+
+| # | Delivery # | Operator | Comments |
+|---|-----------|----------|---------|
+| 1 | 4200891234 | J.MARTINEZ | Inbound pallets from Supplier ABC |
+| 2 | 4200927461 | R.CHEN | Electronics batch — no stacking |
+| 3 | 4201063052 | A.PATEL | Automotive parts — 3 pallets |
+| 4 | 4200758213 | K.SCHMIDT | Cold chain — keep refrigerated |
+| 5 | 4200819447 | L.JOHNSON | Returns processing — RMA batch |
+
+Mock data is defined in `LabelActivity.MOCK_DELIVERIES`. No backend or scan needed for demo.
+
+---
+
+### 10c. Incident Report Feature
+
+**RF Menu → Reports** (also accessible from Dashboard tile)
+
+| Field | Details |
+|-------|---------|
+| Photo | Camera capture via `ActivityResultContracts.TakePicture()` — preview shown inline |
+| Description | Free text, max 40 characters with live counter |
+| Location | Free text (Aisle / Zone / Bay) |
+| Urgency | Single-select chip: **High** (red) / **Medium** (orange) / **Low** (green) |
+| Send | Opens Gmail directly (`com.google.android.gm`) with report pre-filled |
+
+**Email format:**
+- **To:** supervisor email (from Profile)
+- **CC:** personal email (from Profile)
+- **Subject:** `[HIGH] Incident Report — Aisle A3 — 2026-05-04 10:22`
+- **Body:** formatted incident block with operator, site, location, urgency, description
+- **Attachment:** photo (via FileProvider) if taken
+
+If Gmail is not installed it falls back to the system share chooser.
+
+**Key files:** `ReportActivity.kt`, `activity_report.xml`, `layout/` carrier label XMLs
+
+**FileProvider path added:** `<cache-path name="report_photos" path="reports/" />`
+
+---
+
+### 10d. Profile — Supervisor Email
+
+`QuestionnaireActivity` now stores two email fields:
+
+| Key | Constant | Purpose |
+|-----|----------|---------|
+| `email` | `KEY_EMAIL` | Operator's own email — used as CC on reports |
+| `supervisor_email` | `KEY_SUPERVISOR_EMAIL` | Manager's email — used as To on reports |
+
+Both are validated with `Patterns.EMAIL_ADDRESS` (optional fields). Set them in **Profile** before using the Report feature.
+
+---
+
+### 10e. Teams Notification (Planned)
+
+Direct posting to a Microsoft Teams channel via an **Incoming Webhook** (Power Automate / Workflows) is planned for a future sprint.
+
+**Planned approach:**
+1. Create a Power Automate flow: HTTP trigger → Post adaptive card to Teams channel
+2. Store the webhook URL in Profile settings (`KEY_WEBHOOK_URL`)
+3. `ReportActivity` POSTs JSON body (urgency, description, location, photo URL) on submit
+
+> **Current workaround:** Use the Gmail send and forward the email in Teams, or use the Teams share intent once implemented.
+
+---
+
+### 10f. BTP Services Required to Run DroidX
+
+The following CF apps must be **started** before testing:
+
+```bash
+cf start ForkQA-srv              # CAP OData backend (/api/Deliveries, /api/Inspections)
+cf start BindMobileApplicationRoutesToME   # Mobile Services OAuth proxy
+```
+
+HANA Cloud must also be **Running** (check BTP Cockpit — it auto-stops on Trial).
+
+**Quick health check:**
+```bash
+curl -s -o /dev/null -w "%{http_code}" \
+  https://f6c0e9f2trial-dev-forkqa-srv.cfapps.us10-001.hana.ondemand.com/api/Deliveries
+# Expect: 200
+```
+
+
