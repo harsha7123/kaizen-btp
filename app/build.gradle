@@ -5,6 +5,11 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.compose' version '2.1.0'
 }
 
+// Load BTP secrets from local.properties (never committed to VCS)
+def localProps = new Properties()
+def localPropsFile = rootProject.file('local.properties')
+if (localPropsFile.exists()) localProps.load(localPropsFile.newDataInputStream())
+
 android {
     namespace 'com.sap.droidx'
     compileSdk 36
@@ -13,15 +18,28 @@ android {
         applicationId "com.sap.droidx"
         minSdk 26
         targetSdk 36
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.1.0"
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // BTP connection values — injected from local.properties, never hardcoded in source
+        buildConfigField "String", "BTP_SERVER_URL",      "\"${localProps.getProperty('btp.server.url', '')}\""
+        buildConfigField "String", "BTP_XSUAA_BASE_URL",  "\"${localProps.getProperty('btp.xsuaa.base.url', '')}\""
+        buildConfigField "String", "BTP_BACKEND_URL",     "\"${localProps.getProperty('btp.backend.url', '')}\""
+        buildConfigField "String", "OAUTH_CLIENT_ID",     "\"${localProps.getProperty('btp.oauth.client.id', '')}\""
+        buildConfigField "String", "OAUTH_CLIENT_SECRET", "\"${localProps.getProperty('btp.oauth.client.secret', '')}\""
+        buildConfigField "String", "ANTHROPIC_API_KEY",   "\"${localProps.getProperty('anthropic.api.key', '')}\""
     }
 
     buildTypes {
-        release {
+        debug {
+            // Debug builds keep code readable for development
             minifyEnabled false
+        }
+        release {
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -32,7 +50,7 @@ android {
     }
     kotlinOptions { jvmTarget = '17' }
 
-    buildFeatures { viewBinding true; compose true }
+    buildFeatures { viewBinding true; compose true; buildConfig true }
 
     packagingOptions {
         resources {
@@ -54,12 +72,15 @@ dependencies {
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0'
+    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.7.0'
     implementation 'androidx.activity:activity-ktx:1.8.2'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.2.0'
 
     // Barcode / QR scanning
     implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
 
+    // Location (FusedLocationProviderClient for high-accuracy GPS)
+    implementation 'com.google.android.gms:play-services-location:21.2.0'
 
     // Kotlin + coroutines
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
@@ -71,18 +92,19 @@ dependencies {
     implementation 'androidx.navigation:navigation-compose:2.7.6'
 
     // ---- SAP BTP SDK for Android ----
-    // Foundation (settings, logger, common infra)
     implementation "com.sap.cloud.android:foundation:$sap_sdk_version"
-    // Flows V2 – pre-built onboarding / passcode / logon screens
     implementation "com.sap.cloud.android:flowsv2:$sap_sdk_version"
     implementation "com.sap.cloud.android:flows-compose:$sap_sdk_version"
-    // Fix for bug in SDK 26.1.2 POM
     implementation "com.sap.cloud.android:fiori-composable-theme:$sap_sdk_version"
-    // OData (consume CAP service exposed via Mobile Services destination)
     implementation "com.sap.cloud.android:odata:$sap_sdk_version"
-    // Fiori UI widgets (optional – gives you the SAP-styled list cells)
     implementation "com.sap.cloud.android:fiori:$sap_sdk_version"
 
+    // Unit tests
     testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3'
+    testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
+
+    // Instrumented tests
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }

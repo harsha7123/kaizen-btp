@@ -48,6 +48,7 @@ class MainActivity : AppCompatActivity() {
 
         setSupportActionBar(binding.toolbar)
         supportActionBar?.title = null
+        binding.toolbar.setNavigationOnClickListener { finish() }
 
         binding.list.layoutManager = LinearLayoutManager(this)
         binding.list.adapter = adapter
@@ -69,6 +70,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.nav_rf -> {
                     startActivity(Intent(this, RFMenuActivity::class.java))
+                    true
+                }
+                R.id.nav_report -> {
+                    startActivity(Intent(this, ReportActivity::class.java))
                     true
                 }
                 R.id.nav_profile -> {

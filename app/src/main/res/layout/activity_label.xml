@@ -31,7 +31,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="SAP EWM — Label Printing"
+                    android:text="Label Printing"
                     android:textColor="#90CAF9"
                     android:textSize="12sp" />
 

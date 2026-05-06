@@ -13,6 +13,10 @@
         android:icon="@drawable/ic_nav_rf"
         android:title="RF Menu" />
     <item
+        android:id="@+id/nav_report"
+        android:icon="@drawable/ic_nav_report"
+        android:title="Report" />
+    <item
         android:id="@+id/nav_profile"
         android:icon="@drawable/ic_nav_profile"
         android:title="Profile" />

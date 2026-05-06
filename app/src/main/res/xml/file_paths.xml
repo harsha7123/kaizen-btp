@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
     <cache-path name="inspection_photos" path="photos/" />
+    <cache-path name="report_photos" path="reports/" />
+    <cache-path name="task_photos"   path="tasks/" />
 </paths>

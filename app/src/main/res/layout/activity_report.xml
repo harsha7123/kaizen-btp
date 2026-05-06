@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F4F6F9">
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:paddingBottom="80dp"
+        android:clipToPadding="false">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Blue header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="#B71C1C"
+                android:padding="20dp"
+                android:paddingBottom="28dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Incident Report"
+                    android:textColor="#FFCDD2"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Report to Manager"
+                    android:textColor="#FFFFFF"
+                    android:textSize="26sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <!-- Photo card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginTop="-12dp"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Photo"
+                        android:textStyle="bold"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="10dp" />
+
+                    <ImageView
+                        android:id="@+id/ivPhoto"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp"
+                        android:scaleType="centerCrop"
+                        android:background="#F0F0F0"
+                        android:visibility="gone"
+                        android:layout_marginBottom="10dp"
+                        android:contentDescription="Incident photo" />
+
+                    <TextView
+                        android:id="@+id/tvPhotoHint"
+                        android:layout_width="match_parent"
+                        android:layout_height="120dp"
+                        android:gravity="center"
+                        android:text="No photo taken"
+                        android:textColor="#AAAAAA"
+                        android:textSize="13sp"
+                        android:background="#F7F7F7"
+                        android:layout_marginBottom="10dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCamera"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Take Photo" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Description card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Description"
+                        android:textStyle="bold"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="10dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilDescription"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="What happened? (max 40 chars)"
+                        app:counterEnabled="true"
+                        app:counterMaxLength="40">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etDescription"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:maxLength="40"
+                            android:inputType="text"
+                            android:imeOptions="actionNext" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Location card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Location"
+                        android:textStyle="bold"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="10dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilLocation"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Aisle / Zone / Bay">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etLocation"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text"
+                            android:imeOptions="actionDone" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Urgency card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Urgency"
+                        android:textStyle="bold"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="10dp" />
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chipGroupUrgency"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:singleSelection="true"
+                        app:selectionRequired="true">
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipHigh"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="High"
+                            android:textColor="#B71C1C"
+                            app:chipBackgroundColor="@color/chip_urgency_high_bg" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipMedium"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Medium"
+                            android:textColor="#E65100"
+                            app:chipBackgroundColor="@color/chip_urgency_med_bg" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipLow"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Low"
+                            android:textColor="#1B5E20"
+                            app:chipBackgroundColor="@color/chip_urgency_low_bg" />
+
+                    </com.google.android.material.chip.ChipGroup>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Actions card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Email button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSend"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:strokeColor="#B71C1C"
+                        android:textColor="#B71C1C"
+                        app:iconTint="#B71C1C"
+                        app:icon="@android:drawable/ic_dialog_email"
+                        android:text="Email to Manager" />
+
+                    <TextView
+                        android:id="@+id/tvEmailHint"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="11sp"
+                        android:textColor="#888888"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="14dp"
+                        android:text="Sends to supervisor email set in Profile" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#E0E0E0"
+                        android:layout_marginBottom="14dp" />
+
+                    <!-- Dashboard button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDashboard"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:backgroundTint="#1565C0"
+                        app:icon="@android:drawable/ic_menu_upload"
+                        android:text="Report to Manager Dashboard" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="11sp"
+                        android:textColor="#888888"
+                        android:layout_marginTop="4dp"
+                        android:text="Saves directly to ForkQA dashboard (no email)" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.bottomappbar.BottomAppBar
+        android:id="@+id/bottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        app:navigationIcon="?attr/homeAsUpIndicator"
+        app:navigationContentDescription="Back" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

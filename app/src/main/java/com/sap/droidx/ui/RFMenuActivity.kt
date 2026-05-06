@@ -4,19 +4,13 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.sap.droidx.R
 import com.sap.droidx.databinding.ActivityRfMenuBinding
 import java.time.LocalDate
 
 class RFMenuActivity : AppCompatActivity() {
-
-    private lateinit var binding: ActivityRfMenuBinding
 
     data class RFMenuItem(val number: String, val label: String, val section: String)
 
@@ -27,14 +21,15 @@ class RFMenuActivity : AppCompatActivity() {
         RFMenuItem("4", "PHYSICAL INVENTORY", "PHYS_INV"),
         RFMenuItem("5", "EXCEPTION HANDLING", "EXCEPTION"),
         RFMenuItem("6", "LABELS",             "LABELS"),
+        RFMenuItem("7", "CONFIRM TASK",       "CONFIRM_TASK"),
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityRfMenuBinding.inflate(layoutInflater)
+        val binding = ActivityRfMenuBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.bottomBar.setNavigationOnClickListener { finish() }
+        binding.btnBack.setOnClickListener { finish() }
 
         val prefs = getSharedPreferences(QuestionnaireActivity.PREFS, Context.MODE_PRIVATE)
         val user = prefs.getString(QuestionnaireActivity.KEY_NAME, "OPERATOR")
@@ -45,43 +40,25 @@ class RFMenuActivity : AppCompatActivity() {
         binding.tvUserInfo.text =
             "WH: ${site.padEnd(14)}USER: $user\nDATE: ${LocalDate.now()}"
 
-        binding.rvMenu.layoutManager = LinearLayoutManager(this)
-        binding.rvMenu.adapter = RFMenuAdapter(menuItems) { item ->
-            if (item.section == "LABELS") {
-                startActivity(Intent(this, LabelActivity::class.java))
-            } else {
-                startActivity(
-                    Intent(this, RFSubMenuActivity::class.java)
-                        .putExtra(RFSubMenuActivity.EXTRA_SECTION, item.section)
-                        .putExtra(RFSubMenuActivity.EXTRA_TITLE, item.label)
-                )
-            }
+        val inflater = LayoutInflater.from(this)
+        menuItems.forEach { item ->
+            val row = inflater.inflate(R.layout.item_rf_menu, binding.menuContainer, false)
+            row.findViewById<TextView>(R.id.tvNumber).text = item.number
+            row.findViewById<TextView>(R.id.tvLabel).text  = item.label
+            row.setOnClickListener { onItemClick(item) }
+            binding.menuContainer.addView(row)
         }
     }
-}
 
-class RFMenuAdapter(
-    private val items: List<RFMenuActivity.RFMenuItem>,
-    private val onClick: (RFMenuActivity.RFMenuItem) -> Unit
-) : RecyclerView.Adapter<RFMenuAdapter.VH>() {
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-        val v = LayoutInflater.from(parent.context).inflate(R.layout.item_rf_menu, parent, false)
-        return VH(v)
-    }
-
-    override fun onBindViewHolder(holder: VH, position: Int) = holder.bind(items[position])
-    override fun getItemCount() = items.size
-
-    inner class VH(v: View) : RecyclerView.ViewHolder(v) {
-        private val tvNumber: TextView = v.findViewById(R.id.tvNumber)
-        private val tvLabel: TextView = v.findViewById(R.id.tvLabel)
-
-        init { v.setOnClickListener { onClick(items[adapterPosition]) } }
-
-        fun bind(item: RFMenuActivity.RFMenuItem) {
-            tvNumber.text = item.number
-            tvLabel.text = item.label
+    private fun onItemClick(item: RFMenuItem) {
+        when (item.section) {
+            "LABELS"       -> startActivity(Intent(this, LabelActivity::class.java))
+            "CONFIRM_TASK" -> startActivity(Intent(this, ConfirmTaskActivity::class.java))
+            else -> startActivity(
+                Intent(this, RFSubMenuActivity::class.java)
+                    .putExtra(RFSubMenuActivity.EXTRA_SECTION, item.section)
+                    .putExtra(RFSubMenuActivity.EXTRA_TITLE, item.label)
+            )
         }
     }
 }

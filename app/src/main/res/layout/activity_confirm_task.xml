@@ -1,0 +1,615 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F4F6F9">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingBottom="80dp"
+        android:clipToPadding="false">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="#00695C"
+                android:padding="20dp"
+                android:paddingBottom="28dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Warehouse Operations"
+                    android:textColor="#B2DFDB"
+                    android:textSize="12sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Confirm Task"
+                    android:textColor="#FFFFFF"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <!-- ── Card 1: Task Number Entry ── -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginTop="-12dp"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="TASK NUMBER"
+                        android:textSize="11sp"
+                        android:textColor="#00695C"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.1"
+                        android:layout_marginBottom="12dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/tilTaskNumber"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="10-digit task number"
+                            android:layout_marginEnd="8dp">
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etTaskNumber"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="number"
+                                android:maxLength="10"
+                                android:imeOptions="actionDone" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnScanTask"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Scan" />
+
+                    </LinearLayout>
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnFetchTask"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:backgroundTint="#00695C"
+                            android:text="Fetch Task" />
+
+                        <ProgressBar
+                            android:id="@+id/progressFetch"
+                            style="?android:attr/progressBarStyleSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:indeterminateTint="#FFFFFF"
+                            android:visibility="gone" />
+
+                    </FrameLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ── Already Confirmed Banner (hidden until fetched and status = CONFIRMED) ── -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardAlreadyConfirmed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="12dp"
+                android:visibility="gone"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="#FFF8E1">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Header row with badge -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="PREVIOUS CONFIRMATION"
+                            android:textSize="11sp"
+                            android:textColor="#E65100"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.1" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="CONFIRMED"
+                            android:textSize="11sp"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold"
+                            android:background="#4CAF50"
+                            android:paddingStart="8dp"
+                            android:paddingEnd="8dp"
+                            android:paddingTop="3dp"
+                            android:paddingBottom="3dp" />
+                    </LinearLayout>
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:layout_marginBottom="6dp">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:text="Confirmed HU"
+                            android:textColor="#757575" android:textSize="13sp" />
+                        <TextView android:id="@+id/tvPrevConfirmedHU"
+                            android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="2" android:text="—"
+                            android:textColor="#212121" android:textSize="13sp" android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp"
+                        android:background="#FFE082" android:layout_marginBottom="6dp" />
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:layout_marginBottom="6dp">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:text="Confirmed Qty"
+                            android:textColor="#757575" android:textSize="13sp" />
+                        <TextView android:id="@+id/tvPrevConfirmedQty"
+                            android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="2" android:text="—"
+                            android:textColor="#212121" android:textSize="13sp" android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp"
+                        android:background="#FFE082" android:layout_marginBottom="6dp" />
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:layout_marginBottom="6dp">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:text="Confirmed Bin"
+                            android:textColor="#757575" android:textSize="13sp" />
+                        <TextView android:id="@+id/tvPrevConfirmedBin"
+                            android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="2" android:text="—"
+                            android:textColor="#212121" android:textSize="13sp" android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp"
+                        android:background="#FFE082" android:layout_marginBottom="6dp" />
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:layout_marginBottom="6dp">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:text="Confirmed By"
+                            android:textColor="#757575" android:textSize="13sp" />
+                        <TextView android:id="@+id/tvPrevConfirmedBy"
+                            android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="2" android:text="—"
+                            android:textColor="#212121" android:textSize="13sp" android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp"
+                        android:background="#FFE082" android:layout_marginBottom="6dp" />
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:text="Confirmed At"
+                            android:textColor="#757575" android:textSize="13sp" />
+                        <TextView android:id="@+id/tvPrevConfirmedAt"
+                            android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="2" android:text="—"
+                            android:textColor="#212121" android:textSize="13sp" android:textStyle="bold" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ── Card 2: Task Reference (read-only, hidden until fetched) ── -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardTaskDetails"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="12dp"
+                android:visibility="gone"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="TASK REFERENCE"
+                        android:textSize="11sp"
+                        android:textColor="#00695C"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.1"
+                        android:layout_marginBottom="12dp" />
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:layout_marginBottom="6dp">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:text="Material"
+                            android:textColor="#757575" android:textSize="13sp" />
+                        <TextView android:id="@+id/tvDetailMaterial"
+                            android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="2" android:text="—"
+                            android:textColor="#212121" android:textSize="13sp" android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp"
+                        android:background="#F0F0F0" android:layout_marginBottom="6dp" />
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:layout_marginBottom="6dp">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:text="Task Qty"
+                            android:textColor="#757575" android:textSize="13sp" />
+                        <TextView android:id="@+id/tvDetailQty"
+                            android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="2" android:text="—"
+                            android:textColor="#212121" android:textSize="13sp" android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp"
+                        android:background="#F0F0F0" android:layout_marginBottom="6dp" />
+
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:text="Route"
+                            android:textColor="#757575" android:textSize="13sp" />
+                        <TextView android:id="@+id/tvDetailRoute"
+                            android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="2" android:text="—"
+                            android:textColor="#212121" android:textSize="13sp" android:textStyle="bold" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ── Card 3: Confirmation Inputs (editable, hidden until fetched) ── -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardConfirmInputs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="12dp"
+                android:visibility="gone"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="CONFIRM DETAILS"
+                        android:textSize="11sp"
+                        android:textColor="#00695C"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.1"
+                        android:layout_marginBottom="14dp" />
+
+                    <!-- Handling Unit -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Handling Unit"
+                        android:textColor="#555555"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="4dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="14dp">
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/tilConfirmHU"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="Scan or enter HU"
+                            android:layout_marginEnd="8dp">
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etConfirmHU"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="textCapCharacters"
+                                android:imeOptions="actionNext" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnScanHU"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Scan" />
+
+                    </LinearLayout>
+
+                    <!-- Confirmed Quantity -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilConfirmQty"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Confirmed Quantity *"
+                        android:layout_marginBottom="14dp">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etConfirmQty"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="numberDecimal"
+                            android:imeOptions="actionNext" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Destination Bin -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Destination Bin *"
+                        android:textColor="#555555"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="4dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/tilBin"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="Scan or enter bin *"
+                            android:layout_marginEnd="8dp">
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etBin"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="textCapCharacters"
+                                android:imeOptions="actionDone" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnScanBin"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Scan" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ── Card 4: Photos (multiple, hidden until fetched) ── -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardPhoto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="12dp"
+                android:visibility="gone"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="10dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="PHOTOS (OPTIONAL)"
+                            android:textSize="11sp"
+                            android:textColor="#00695C"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.1" />
+
+                        <TextView
+                            android:id="@+id/tvPhotoCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0 / 5"
+                            android:textColor="#757575"
+                            android:textSize="12sp" />
+
+                    </LinearLayout>
+
+                    <!-- Thumbnail strip -->
+                    <HorizontalScrollView
+                        android:id="@+id/scrollPhotos"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:visibility="gone">
+                        <LinearLayout
+                            android:id="@+id/layoutPhotos"
+                            android:layout_width="wrap_content"
+                            android:layout_height="88dp"
+                            android:orientation="horizontal"
+                            android:padding="2dp" />
+                    </HorizontalScrollView>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAddPhoto"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Add Photo" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ── Card 5: Physical Location (hidden until fetched) ── -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardLocation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="12dp"
+                android:visibility="gone"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="PHYSICAL LOCATION (GPS)"
+                        android:textSize="11sp"
+                        android:textColor="#00695C"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.1"
+                        android:layout_marginBottom="10dp" />
+
+                    <TextView
+                        android:id="@+id/tvLocation"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Fetching location…"
+                        android:textColor="#555555"
+                        android:textSize="13sp"
+                        android:fontFamily="monospace"
+                        android:layout_marginBottom="6dp" />
+
+                    <TextView
+                        android:id="@+id/tvAddress"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="#444444"
+                        android:textSize="13sp"
+                        android:layout_marginBottom="10dp"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnGetLocation"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Refresh Location" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ── Confirm Button (hidden until fetched) ── -->
+            <FrameLayout
+                android:id="@+id/frameConfirm"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnConfirm"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:backgroundTint="#00695C"
+                    android:text="Save &amp; Confirm Task"
+                    android:textSize="16sp" />
+
+                <ProgressBar
+                    android:id="@+id/progressConfirm"
+                    style="?android:attr/progressBarStyleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:indeterminateTint="#FFFFFF"
+                    android:visibility="gone" />
+
+            </FrameLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.bottomappbar.BottomAppBar
+        android:id="@+id/bottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        app:navigationIcon="?attr/homeAsUpIndicator"
+        app:navigationContentDescription="Back" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

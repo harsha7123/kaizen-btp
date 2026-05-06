@@ -22,4 +22,4 @@ app/build/
 *.xml
 !app/**/*.xml
 !*.gradle
-com/
+/com/

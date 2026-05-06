@@ -6,6 +6,11 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.sap.droidx.R
 import com.sap.droidx.databinding.ActivityQuestionnaireBinding
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
 
 class QuestionnaireActivity : AppCompatActivity() {
 
@@ -25,13 +30,19 @@ class QuestionnaireActivity : AppCompatActivity() {
         binding = ActivityQuestionnaireBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Always show detected timezone
+        val zone   = ZoneId.systemDefault()
+        val tzName = zone.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+        val offset = ZonedDateTime.now(zone).format(DateTimeFormatter.ofPattern("OOOO"))
+        binding.etTimezone.setText("$tzName  ($offset)  —  ${zone.id}")
+
         if (fromNav) binding.bottomBar.setNavigationOnClickListener { finish() }
 
-        // Pre-fill saved values when opened from nav
         if (fromNav) {
             binding.etName.setText(prefs.getString(KEY_NAME, ""))
             binding.etSite.setText(prefs.getString(KEY_SITE, ""))
             binding.etEmail.setText(prefs.getString(KEY_EMAIL, ""))
+            binding.etSupervisorEmail.setText(prefs.getString(KEY_SUPERVISOR_EMAIL, ""))
         }
 
         binding.btnContinue.setOnClickListener {
@@ -57,6 +68,13 @@ class QuestionnaireActivity : AppCompatActivity() {
             }
             binding.tilEmail.error = null
 
+            val supervisorEmail = binding.etSupervisorEmail.text?.toString().orEmpty().trim()
+            if (supervisorEmail.isNotEmpty() && !android.util.Patterns.EMAIL_ADDRESS.matcher(supervisorEmail).matches()) {
+                binding.tilSupervisorEmail.error = "Enter a valid email address"
+                return@setOnClickListener
+            }
+            binding.tilSupervisorEmail.error = null
+
             val role = when (binding.rgRole.checkedRadioButtonId) {
                 R.id.rbInspector  -> ROLE_INSPECTOR
                 R.id.rbSupervisor -> ROLE_SUPERVISOR
@@ -67,7 +85,9 @@ class QuestionnaireActivity : AppCompatActivity() {
                 .putString(KEY_NAME, name)
                 .putString(KEY_SITE, site)
                 .putString(KEY_EMAIL, email)
+                .putString(KEY_SUPERVISOR_EMAIL, supervisorEmail)
                 .putString(KEY_ROLE, role)
+                .putString(KEY_TIMEZONE, ZoneId.systemDefault().id)
                 .apply()
 
             goToMain()
@@ -75,19 +95,21 @@ class QuestionnaireActivity : AppCompatActivity() {
     }
 
     private fun goToMain() {
-        startActivity(Intent(this, MainActivity::class.java))
+        startActivity(Intent(this, DashboardActivity::class.java))
         finish()
     }
 
     companion object {
-        const val PREFS           = "droidx_profile"
-        const val KEY_NAME        = "operator_name"
-        const val KEY_SITE        = "site"
-        const val KEY_EMAIL       = "email"
-        const val KEY_ROLE        = "role"
-        const val ROLE_OPERATOR   = "Forklift Operator"
-        const val ROLE_INSPECTOR  = "Inspector"
-        const val ROLE_SUPERVISOR = "Supervisor"
-        const val EXTRA_FROM_NAV  = "from_nav"
+        const val PREFS                = "droidx_profile"
+        const val KEY_NAME             = "operator_name"
+        const val KEY_SITE             = "site"
+        const val KEY_EMAIL            = "email"
+        const val KEY_SUPERVISOR_EMAIL = "supervisor_email"
+        const val KEY_ROLE             = "role"
+        const val KEY_TIMEZONE         = "timezone"
+        const val ROLE_OPERATOR        = "Forklift Operator"
+        const val ROLE_INSPECTOR       = "Inspector"
+        const val ROLE_SUPERVISOR      = "Supervisor"
+        const val EXTRA_FROM_NAV       = "from_nav"
     }
 }

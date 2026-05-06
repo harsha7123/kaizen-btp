@@ -1,0 +1,33 @@
+{
+  "xsappname": "com-sap-droidx-dev",
+  "tenant-mode": "shared",
+  "oauth2-configuration": {
+    "grant-types": ["authorization_code", "refresh_token"],
+    "redirect-uris": ["com.sap.droidx://oauth"],
+    "autoapprove": true,
+    "token-validity": 3600,
+    "refresh-token-validity": 2592000
+  },
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.user",
+      "description": "DroidX user",
+      "grant-as-authority-to-apps": []
+    },
+    {
+      "name": "uaa.user",
+      "description": "UAA user"
+    },
+    {
+      "name": "openid",
+      "description": "OpenID Connect"
+    }
+  ],
+  "role-templates": [
+    {
+      "name": "DroidXUser",
+      "description": "DroidX user role",
+      "scope-references": ["$XSAPPNAME.user"]
+    }
+  ]
+}

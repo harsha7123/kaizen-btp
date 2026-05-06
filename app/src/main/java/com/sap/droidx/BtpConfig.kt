@@ -3,43 +3,28 @@ package com.sap.droidx
 /**
  * BTP / Mobile Services connection settings.
  *
- * OAuth goes through the Mobile Services proxy (SERVER_URL/OAuth2/api/v1/…) so that
- * the XSUAA client secret stays server-side and the app never needs to embed it.
+ * All values come from BuildConfig fields which are injected at build time from local.properties.
+ * No secrets or environment-specific URLs are hardcoded in this file.
+ *
+ * To set up a new environment, add the following keys to local.properties (not committed to VCS):
+ *   btp.server.url          — Mobile Services app proxy URL
+ *   btp.xsuaa.base.url      — XSUAA base URL (https://<subdomain>.authentication.<region>.hana.ondemand.com)
+ *   btp.backend.url         — Direct CAP service URL
+ *   btp.oauth.client.id     — OAuth client ID from Mobile Services → Security tab
+ *   btp.oauth.client.secret — OAuth client secret (Mobile Services proxy handles this server-side in production)
  */
 object BtpConfig {
 
-    /** Mobile Services API endpoint (used for OData and OAuth proxy). */
-    const val SERVER_URL: String =
-        "https://f6c0e9f2trial-dev-com-sap-forkqa.cfapps.us10-001.hana.ondemand.com"
+    val SERVER_URL:      String get() = BuildConfig.BTP_SERVER_URL
+    val XSUAA_BASE_URL:  String get() = BuildConfig.BTP_XSUAA_BASE_URL
+    val FORKQA_BACKEND_URL: String get() = BuildConfig.BTP_BACKEND_URL
+    val OAUTH_CLIENT_ID: String get() = BuildConfig.OAUTH_CLIENT_ID
 
-    /** The application ID in Mobile Services. */
-    const val APPLICATION_ID: String = "com.sap.forkqa"
+    const val APPLICATION_ID   = "com.sap.forkqa"
+    const val REDIRECT_URL     = "com.sap.forkqa://oauth"
+    const val DESTINATION_NAME = "com.sap.forkqa"
+    const val ODATA_SERVICE_PATH = "/api"
 
-    /** OAuth2 client id — Mobile Services OAuth client ID (from Security tab in cockpit). */
-    const val OAUTH_CLIENT_ID: String = "e80a0af5-cc40-471f-a961-b860b2750d63"
-
-    const val OAUTH_CLIENT_SECRET: String =
-        "3748c084-65e2-4c18-9877-7c8da46bc945\$fAx-NLa6yoF9UeiGuKMzMo9y8wBLJQcK7YgIi85ENoQ="
-
-    /** XSUAA base URL. */
-    const val XSUAA_BASE_URL: String =
-        "https://f6c0e9f2trial.authentication.us10.hana.ondemand.com"
-
-    /** Mobile Services OAuth proxy authorization endpoint. */
-    const val AUTH_URL: String = "$SERVER_URL/oauth2/api/v1/authorize"
-
-    /** Mobile Services OAuth proxy token endpoint. */
-    const val TOKEN_URL: String = "$SERVER_URL/oauth2/api/v1/token"
-
-    /** Redirect URL registered in Mobile Services and in AndroidManifest. */
-    const val REDIRECT_URL: String = "com.sap.forkqa://oauth"
-
-    /** Mobile Services destination name. */
-    const val DESTINATION_NAME: String = "com.sap.forkqa"
-
-    /** Direct URL for the ForkQA CAP service (used until Mobile Services destination is configured). */
-    const val FORKQA_BACKEND_URL: String = "https://f6c0e9f2trial-dev-forkqa-srv.cfapps.us10-001.hana.ondemand.com"
-
-    /** OData service path — ForkQA CAP service is exposed at /api. */
-    const val ODATA_SERVICE_PATH: String = "/api"
+    val AUTH_URL:  String get() = "$SERVER_URL/oauth2/api/v1/authorize"
+    val TOKEN_URL: String get() = "$SERVER_URL/oauth2/api/v1/token"
 }

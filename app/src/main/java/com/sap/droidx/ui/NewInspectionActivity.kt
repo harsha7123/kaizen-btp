@@ -125,47 +125,50 @@ class NewInspectionActivity : AppCompatActivity() {
         }
         binding.tilOperatorName.error = null
 
-        val shift  = if (binding.rgShift.checkedRadioButtonId == R.id.rbDay) "DAY" else "NIGHT"
-        val status = if (binding.rgStatus.checkedRadioButtonId == R.id.rbReady) "READY" else "NOT_READY"
-        val remarks = binding.etRemarks.text?.toString().orEmpty().trim()
+        val shift      = if (binding.rgShift.checkedRadioButtonId == R.id.rbDay) "DAY" else "NIGHT"
+        val odometer   = binding.etOdometer.text?.toString().orEmpty().trim().toIntOrNull() ?: 0
+        val remarks    = binding.etRemarks.text?.toString().orEmpty().trim()
 
-        submitInspection(forkliftId, operatorName, shift, status, remarks)
+        val tires      = if (binding.rgTires.checkedRadioButtonId      == R.id.rbTiresPass)      "PASS" else "FAIL"
+        val body       = if (binding.rgBody.checkedRadioButtonId        == R.id.rbBodyPass)       "PASS" else "FAIL"
+        val brakes     = if (binding.rgBrakes.checkedRadioButtonId      == R.id.rbBrakesPass)     "PASS" else "FAIL"
+        val hydraulics = if (binding.rgHydraulics.checkedRadioButtonId  == R.id.rbHydraulicsPass) "PASS" else "FAIL"
+        val horn       = if (binding.rgHorn.checkedRadioButtonId        == R.id.rbHornPass)       "PASS" else "FAIL"
+
+        submitInspection(forkliftId, operatorName, shift, odometer, tires, body, brakes, hydraulics, horn, remarks)
     }
 
     private fun submitInspection(
-        forkliftId: String, operatorName: String,
-        shift: String, status: String, remarks: String
+        forkliftId: String, operatorName: String, shift: String, odometer: Int,
+        tires: String, body: String, brakes: String, hydraulics: String, horn: String,
+        remarks: String
     ) {
         binding.btnSubmit.isEnabled = false
         lifecycleScope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    Log.d(TAG, "Submitting: photo=${if (photoBase64 != null) "${photoBase64!!.length} chars" else "none"}")
                     val json = JSONObject().apply {
-                        put("FORKLIFT_ID", forkliftId)
-                        put("OPERATOR_NAME", operatorName)
-                        put("OPERATOR_ID", "")
-                        put("INSPECTION_DATE", LocalDate.now().toString())
-                        put("SHIFT", shift)
-                        put("STATUS", status)
-                        put("REMARKS", remarks)
-                        put("TIRE_PRESSURE", "PASS")
-                        put("PHYSICAL_CONDITION", "PASS")
-                        put("BRAKES", "PASS")
-                        put("HYDRAULICS", "PASS")
-                        put("HORN_LIGHTS", "PASS")
-                        put("ODOMETER", 0)
+                        put("FORKLIFT_ID",        forkliftId)
+                        put("OPERATOR_NAME",      operatorName)
+                        put("OPERATOR_ID",        "")
+                        put("INSPECTION_DATE",    LocalDate.now().toString())
+                        put("SHIFT",              shift)
+                        put("ODOMETER",           odometer)
+                        put("TIRE_PRESSURE",      tires)
+                        put("PHYSICAL_CONDITION", body)
+                        put("BRAKES",             brakes)
+                        put("HYDRAULICS",         hydraulics)
+                        put("HORN_LIGHTS",        horn)
+                        put("REMARKS",            remarks)
                         if (photoBase64 != null) put("PHOTO_DATA", photoBase64)
                     }
-                    val body = json.toString().toRequestBody("application/json".toMediaType())
                     val request = Request.Builder()
                         .url("${BtpConfig.FORKQA_BACKEND_URL}${BtpConfig.ODATA_SERVICE_PATH}/Inspections")
-                        .post(body)
+                        .post(json.toString().toRequestBody("application/json".toMediaType()))
                         .build()
                     val response = ClientProvider.get().newCall(request).execute()
                     if (!response.isSuccessful)
                         throw IllegalStateException("HTTP ${response.code}: ${response.body?.string()}")
-                    Log.d(TAG, "Inspection created: ${response.code}")
                 }
             }.onSuccess {
                 setResult(RESULT_OK)

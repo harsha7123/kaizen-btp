@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#0D1B2A"
+    android:gravity="center">
+
+    <TextView
+        android:id="@+id/tvVoiceState"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Tap microphone to post a Goods Receipt"
+        android:textColor="#90A4AE"
+        android:textSize="16sp"
+        android:gravity="center"
+        android:paddingStart="32dp"
+        android:paddingEnd="32dp"
+        android:layout_marginBottom="12dp" />
+
+    <TextView
+        android:id="@+id/tvHeard"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#546E7A"
+        android:textSize="13sp"
+        android:fontFamily="monospace"
+        android:gravity="center"
+        android:paddingStart="32dp"
+        android:paddingEnd="32dp"
+        android:visibility="gone" />
+
+    <!-- Mic FAB + pulse ring -->
+    <FrameLayout
+        android:id="@+id/fabContainer"
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:layout_marginTop="40dp">
+
+        <View
+            android:id="@+id/vPulse"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:background="@drawable/bg_mic_pulse"
+            android:alpha="0"
+            android:layout_gravity="center" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabMic"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_mic"
+            android:contentDescription="Record voice"
+            app:backgroundTint="#1565C0"
+            app:tint="#FFFFFF"
+            app:fabSize="normal" />
+
+    </FrameLayout>
+
+    <ProgressBar
+        android:id="@+id/progressVoice"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="32dp"
+        android:visibility="gone"
+        android:indeterminateTint="#1565C0" />
+
+    <!-- Order confirmation card (CONFIRM state) -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardPending"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginTop="24dp"
+        android:visibility="gone"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="#1A237E">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Order Found — Confirm GR?"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvOrderDetails"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#9FA8DA"
+                android:textSize="13sp"
+                android:fontFamily="monospace"
+                android:layout_marginTop="10dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="16dp">
+
+                <Button
+                    android:id="@+id/btnConfirmYes"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="YES — Post GR"
+                    style="@style/Widget.MaterialComponents.Button" />
+
+                <Button
+                    android:id="@+id/btnConfirmNo"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="Cancel"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Result card (DONE state) -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardResult"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginTop="32dp"
+        android:visibility="gone"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="#1B5E20">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="24dp">
+
+            <TextView
+                android:id="@+id/tvResultTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Transaction Posted"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvResultDetail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#A5D6A7"
+                android:textSize="14sp"
+                android:gravity="center"
+                android:layout_marginTop="8dp" />
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <Button
+        android:id="@+id/btnVoiceBack"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:text="Back"
+        android:textColor="#90A4AE"
+        style="@style/Widget.MaterialComponents.Button.TextButton" />
+
+</LinearLayout>
