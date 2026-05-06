@@ -1166,23 +1166,30 @@ claude mcp add adt --transport http http://localhost:2236/mcp
 
 ### 10a. Dashboard Landing Page
 
-A groovy 2×3 tile grid replaces the old Inspections list as the app entry point.
+A tile grid replaces the old Inspections list as the app entry point.
 
 **Flow:** Splash → Questionnaire → **Dashboard** → (tap tile) → feature screen
 
-| Tile | Color | Destination |
-|------|-------|-------------|
-| Inspections | Deep Blue `#1565C0` | `MainActivity` (inspection list) |
-| Deliveries | Deep Green `#2E7D32` | `DeliveryListActivity` |
-| RF Menu | Deep Purple `#4527A0` | `RFMenuActivity` |
-| Labels | Teal `#00695C` | `LabelActivity` |
-| Report | Deep Red `#B71C1C` | `ReportActivity` |
-| Profile | Deep Orange `#E65100` | `QuestionnaireActivity` |
+| Row | Tile | Color | Destination |
+|-----|------|-------|-------------|
+| 1 | Inspections | Deep Blue `#1565C0` | `MainActivity` |
+| 1 | Deliveries | Deep Green `#2E7D32` | `DeliveryListActivity` |
+| 2 | RF Menu | Deep Purple `#4527A0` | `RFMenuActivity` |
+| 2 | Labels | Teal `#00695C` | `LabelActivity` |
+| 3 | Packing | Dark Teal `#006064` | `PackingActivity` |
+| 3 | Production | Dark Green `#1B5E20` | `ProductionActivity` |
+| 4 | Report | Deep Red `#B71C1C` | `ReportActivity` |
+| 4 | QC | Amber `#FF6F00` | `QcActivity` |
+| 5 | Profile | Deep Orange `#E65100` | `QuestionnaireActivity` (full-width) |
 
-- Header shows time-based greeting ("Good morning, Sudhakar"), site name, and today's date
-- Each tile has a white icon, title, and subtitle
-- `DashboardActivity.kt` — `activity_dashboard.xml`
-- Back arrow added to `MainActivity` toolbar to return to dashboard
+**Header controls:**
+- Time-based greeting, site name, today's date + timezone
+- 🔍 Search button — toggles a filter bar that hides non-matching tiles in real time
+- ⋮ Overflow menu (`PopupMenu`) with two items:
+  - **View Test Data** — fetches Production Orders, GR Items, QC Items from backend; displays in a scrollable monospace `AlertDialog`
+  - **Reset Test Data** — confirms then calls `POST /api/resetData`; restores all seed data to original state
+
+**Key files:** `DashboardActivity.kt`, `activity_dashboard.xml`
 
 ---
 
@@ -1275,4 +1282,509 @@ curl -s -o /dev/null -w "%{http_code}" \
 # Expect: 200
 ```
 
+---
 
+### 10g. Packing Feature
+
+Operators scan or enter a source (Material ID or HU ID), choose or create a destination Handling Unit, then confirm the pack operation.
+
+**Flow:**
+1. Select source type chip (Material / HU) → scan / type source ID
+2. Select destination mode (Create New / Scan Existing)
+   - **Create New**: choose HU type chip (Pallet / Carton / Box) → backend generates `PAL-YYYYMMDD-NNNN`
+   - **Scan Existing**: scan / type destination HU ID
+3. Tap **Pack** → result card appears with generated HU_ID
+4. Tap **Print Labels** → NumberPicker dialog (1–20) → Snackbar confirmation
+
+**Backend tables:** `HANDLING_UNITS`, `PACKING_ITEMS` (HANA COLUMN TABLEs, v1.2.0)
+
+**HU_ID generation (server-side):**
+```javascript
+const today = new Date().toISOString().slice(0,10).replace(/-/g,'');
+const [[{CNT}]] = await tx.run(
+  `SELECT COUNT(*)+1 AS "CNT" FROM "HANDLING_UNITS" WHERE "HU_TYPE"=? AND "CREATED_AT" >= ?`,
+  [huType, today + 'T00:00:00.000Z']
+);
+const huId = `${prefix}-${today}-${String(CNT).padStart(4,'0')}`;
+```
+
+**Web dashboard:** "Packing" tab — stats tiles (Total HUs / Open / Packing Items), HU table with type/status filter, Seed Demo Data button.
+
+| File | Role |
+|------|------|
+| `PackingRepository.kt` | `createHU()`, `packItem()` via OkHttp |
+| `PackingActivity.kt` | Full packing UI with source/destination chips |
+| `activity_packing.xml` | Dark teal `#006064` header, source card, destination card, result card |
+| `dialog_print_qty.xml` | NumberPicker dialog for label count |
+| `ic_dash_packing.xml` | `inventory_2` box icon, white fill |
+| `HANDLING_UNITS.hdbtable` | HU_ID, HU_TYPE, STATUS, CREATED_BY |
+| `PACKING_ITEMS.hdbtable` | ITEM_ID, DEST_HU_ID, SOURCE_TYPE, SOURCE_ID, QTY |
+
+---
+
+### 10h. Production GR (Goods Receipt) Feature
+
+Operators scan a Production Order ID; each GR tap records one pallet and decrements Open Qty. A "GR & Ship" button creates a delivery and marks the order complete.
+
+**Flow:**
+1. Scan / type Order ID → order card populates (Material, Desc, Batch, Door, Ship To)
+2. Tap **GR — Goods Receipt** → auto-generates HU (`PAL-YYYYMMDD-NNNN`), increments Received Qty, shows Open Qty
+3. GR button auto-disables when `receivedQty >= plannedQty`
+4. Tap **GR & Ship** → creates a Delivery record → Snackbar "Delivery created — Door: X  Ship To: Y"
+
+**Backend tables:** `PRODUCTION_ORDERS`, `GR_ITEMS` (v1.3.0)
+
+**DELIVERY_NUMBER constraint:** `NVARCHAR(10)` — format `GR` + 8-digit epoch suffix:
+```kotlin
+"GR${(System.currentTimeMillis() % 100000000L).toString().padStart(8, '0')}"
+```
+
+**Seed data (5 orders):**
+
+| Order | Material | Planned | Received | Status |
+|-------|----------|---------|----------|--------|
+| PRD-001 | MAT-A001 | 100 | 20 | OPEN |
+| PRD-002 | MAT-B002 | 50 | 50 | COMPLETE |
+| PRD-003 | MAT-C003 | 200 | 80 | OPEN |
+| PRD-004 | MAT-D004 | 30 | 0 | OPEN |
+| PRD-005 | MAT-E005 | 500 | 100 | OPEN |
+
+**Web dashboard:** "Production" tab — stats tiles, order table with status/door filter, Seed button.
+
+| File | Role |
+|------|------|
+| `ProductionRepository.kt` | `fetchOrder()`, `createGR()`, `createDelivery()` |
+| `ProductionActivity.kt` | GR scan loop, session pallet counter, GR & Ship |
+| `activity_production.xml` | Dark green `#1B5E20` header, scan card, order card, stats row |
+| `ic_dash_production.xml` | Material `factory` icon, white fill |
+| `PRODUCTION_ORDERS.hdbtable` | ORDER_ID, MATERIAL, PLANNED_QTY, RECEIVED_QTY, PALLET_QTY, STATUS, DOOR, SHIP_TO |
+| `GR_ITEMS.hdbtable` | GR_ID, ORDER_ID, HU_ID, QTY, GR_BY |
+
+---
+
+### 10i. QC (Quality Control) Feature
+
+Operators scan a material or HU that needs quality inspection; the screen populates from the QC record and presents Approve / Reject actions.
+
+**Flow:**
+1. Select source type chip (Material / HU) → scan / type source ID
+2. Tap **Load** → OData `$filter` query: `SOURCE_ID eq 'X' and SOURCE_TYPE eq 'Y'` → detail card appears
+3. Card shows: Material, Description, Qty, Supplier, Batch, Expiration Date, current Status badge
+4. Tap **Approve** (green) or **Reject** (red) → `PATCH /api/QcItems('id')` with STATUS + QC_BY + QC_AT
+5. Both action buttons disable after a decision; tap **Reset** to scan another item
+
+**OData filter response parsing — important:**
+The OData list response wraps items: `{ "value": [...] }`. Must parse via:
+```kotlin
+val arr = JSONObject(body).optJSONArray("value") ?: throw IllegalStateException("Unexpected format")
+val j = arr.getJSONObject(0)
+```
+`JSONArray(body)` fails on the OData envelope — use the `value` array.
+
+**Seed data:** 10 QC items (6 MATERIAL + 4 HU, mix of PENDING / APPROVED / REJECTED).
+
+**Web dashboard:** "QC" tab — stats tiles (Total / Pending / Approved / Rejected), table with status/type filter, Seed button.
+
+| File | Role |
+|------|------|
+| `QcRepository.kt` | `fetchItem()` via OData `$filter`, `updateStatus()` via PATCH |
+| `QcActivity.kt` | Load → detail card, approve/reject, status badge colour |
+| `activity_qc.xml` | Orange header `#BF360C`, source chips, detail card, action buttons |
+| `ic_dash_qc.xml` | Clipboard + checkmark icon, amber `#FF6F00` fill |
+| `QC_ITEMS.hdbtable` | ITEM_ID, SOURCE_ID, SOURCE_TYPE, MATERIAL, QTY, SUPPLIER, BATCH, EXPIRATION_DATE, STATUS, QC_BY, QC_AT |
+
+---
+
+### 10j. Test Data Management
+
+All test data for Production, GR, and QC modules is managed through dedicated backend endpoints:
+
+| Endpoint | Method | Effect |
+|----------|--------|--------|
+| `POST /api/prodSeed` | POST | Inserts 5 production orders + matching GR items |
+| `POST /api/qcSeed` | POST | Inserts 10 QC items |
+| `POST /api/resetData` | POST | Clears GR_ITEMS → HANDLING_UNITS (GR status) → PRODUCTION_ORDERS → QC_ITEMS then re-inserts all seed data in one transaction |
+
+**From mobile (⋮ overflow menu on Dashboard):**
+- **View Test Data** — fetches Production Orders, GR Items, QC Items via OData; displays formatted in a scrollable monospace `AlertDialog`
+- **Reset Test Data** — confirmation dialog → `POST /api/resetData` → Snackbar
+
+**From web dashboard:** "Reset Test Data" button in page header (calls `/api/resetData` with confirm dialog).
+
+**Reset sequence (order matters):**
+```sql
+DELETE FROM "GR_ITEMS"
+DELETE FROM "HANDLING_UNITS" WHERE "STATUS" = 'GR'   -- clears GR pallets before re-seeding
+DELETE FROM "PRODUCTION_ORDERS"
+DELETE FROM "QC_ITEMS"
+-- then re-insert all mock records
+```
+
+---
+
+### 10k. Multi-User Design Notes
+
+**Current model: single active user per device.**
+
+- Operator name + site stored in `SharedPreferences` (`droidx_profile`) — persists until manually changed via Profile
+- All transaction records stamped with operator name: `GR_BY`, `PACKED_BY`, `QC_BY`, `CREATED_BY`
+- SAP Mobile Services OAuth authenticates the device; the stamped name is self-declared (not tied to OAuth identity)
+- No data isolation — all OData reads return all records regardless of who is logged in
+
+**Suitable for:** dedicated devices (one operator per handset / RF gun)
+
+**Not suitable for (without changes):** shared warehouse tablets with shift changeovers — a "Switch Operator" button that clears `operator_name` and re-routes to QuestionnaireActivity would be needed
+
+---
+
+### 10l. MTAR Build History
+
+| Version | New Tables | Key Feature |
+|---------|-----------|-------------|
+| 1.0.0 | INSPECTIONS | Baseline |
+| 1.0.2 | — | Photo body-size fix |
+| 1.1.0 | DELIVERIES, DELIVERY_PHOTOS | Delivery CRUD |
+| 1.2.0 | HANDLING_UNITS, PACKING_ITEMS | Packing feature |
+| 1.3.0 | PRODUCTION_ORDERS, GR_ITEMS, QC_ITEMS | Production GR + QC |
+| 1.4.0 | REPORTS | Incident Report save-to-dashboard |
+| 1.4.1 | WAREHOUSE_TASKS | Confirm Task — fetch, scan, GPS, multi-photo |
+| 1.4.2 | — | Added CONFIRMED_HU + CONFIRMED_QTY to WAREHOUSE_TASKS |
+| 1.4.3 | — | Added PHYSICAL_ADDRESS + CITY to WAREHOUSE_TASKS; web dashboard WT table redesign |
+
+Build scripts: `C:\Temp\build-mtar-v130.js` / `C:\Temp\build-mtar-v140.js` (Windows — reads previous MTAR, appends new `.hdbtable` files, rebuilds srv zip, outputs new version).
+From v1.4.1 onwards the patch script is Python: `C:\mydata\ForkQA\mta_archives\patch_1.4.x.py`.
+
+---
+
+### 10m. Incident Report — Backend (v1.4.0)
+
+**`REPORTS` table** added to HANA (`db/src/tables/REPORTS.hdbtable`):
+
+```sql
+COLUMN TABLE "REPORTS" (
+    "REPORT_ID"   NVARCHAR(36)  NOT NULL DEFAULT SYSUUID,
+    "OPERATOR"    NVARCHAR(100),
+    "SITE"        NVARCHAR(50),
+    "LOCATION"    NVARCHAR(100),
+    "DESCRIPTION" NVARCHAR(200),
+    "URGENCY"     NVARCHAR(10)  DEFAULT 'MEDIUM',
+    "STATUS"      NVARCHAR(20)  DEFAULT 'OPEN',
+    "PHOTO_DATA"  NCLOB,
+    "CREATED_AT"  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "UPDATED_AT"  TIMESTAMP,
+    PRIMARY KEY ("REPORT_ID")
+)
+```
+
+Full CRUD handlers added to `catalog-service.js` (READ list/single, CREATE, UPDATE status, DELETE). Seed endpoint `POST /api/seed` inserts mock reports.
+
+**`ReportActivity` has two submit paths:**
+
+| Button | Action |
+|--------|--------|
+| **Send Email** | Opens Gmail with pre-filled To (supervisor), CC (operator), subject `[URGENCY] Incident Report — Location — datetime`, photo attached via FileProvider |
+| **Save to Dashboard** | POSTs to `/api/Reports`; record appears in web dashboard "Team Incident Reports" tab |
+
+**Web dashboard** (`srv/app/index.html`) — "Team Incident Reports" tab:
+- Stats tiles (Total / Open / Resolved)
+- Table with operator, site, location, urgency, status, timestamp
+- Status toggle (Open → Resolved) per row
+- Seed button + Refresh button
+- Auto-refreshes every 60 s alongside other tabs
+
+---
+
+### 10n. Missing Data Classes Fix
+
+**Problem:** Build failed with `Unresolved reference: ProductionOrder`, `GrResult`, `QcItem`.
+
+**Root Cause:** `ProductionRepository`, `ProductionViewModel`, `QcRepository`, and `QcViewModel` all referenced these types but the data class files were never created.
+
+**Fix:** Added two new files:
+
+| File | Types defined |
+|------|--------------|
+| [`data/ProductionOrder.kt`](app/src/main/java/com/sap/droidx/data/ProductionOrder.kt) | `ProductionOrder`, `GrResult` |
+| [`data/QcItem.kt`](app/src/main/java/com/sap/droidx/data/QcItem.kt) | `QcItem` |
+
+`QcItem` is a `data class` (not plain class) because `QcViewModel.decide()` calls `.copy(status = status)` on it to produce an updated instance after approve/reject.
+
+---
+
+### 10o. Dashboard Icon Resize
+
+All 8 tile icons on `DashboardActivity` resized from **52 dp → 35 dp** (2/3 scale). Profile row icon resized from **40 dp → 27 dp** (2/3 scale).
+
+Change is in [`activity_dashboard.xml`](app/src/main/res/layout/activity_dashboard.xml) — all `ImageView` `layout_width` / `layout_height` values inside the cards.
+
+---
+
+### 10p. Production Readiness Assessment (2026-05-04)
+The app is a functional internal warehouse tool but has the following blockers before any external or Play Store deployment:
+
+**Hard blockers:**
+
+| # | Issue | Location |
+|---|-------|----------|
+| 1 | OAuth client secret compiled into APK via `BuildConfig` | `local.properties:16`, `app/build.gradle:31` |
+| 2 | Backend uses `dummy` auth — zero JWT validation | `ForkQA/srv/server.js:73` |
+| 3 | OData filter URLs constructed by direct string interpolation of user input — injection risk | `QcRepository.kt:25`, `ProductionRepository.kt:25`, `DeliveryRepository.kt` |
+| 4 | `resp.body!!.string()` force-unwrap on every repository — null body = crash | `PackingRepository.kt:33`, all other repos |
+| 5 | No `signingConfigs` block — cannot produce a signed release APK | `app/build.gradle` |
+
+**Important (not day-one):**
+
+| # | Issue |
+|---|-------|
+| 6 | Raw HTTP response bodies (may contain DB errors / SQL) surfaced to Snackbar UI |
+| 7 | No CORS policy or rate limiting on the Express backend |
+| 8 | No row-level auth in CDS — all operators can read/modify all records |
+| 9 | No offline cache — data entry lost if connection drops mid-operation |
+| 10 | Client secret should be rotated and served from a secure endpoint, not embedded |
+
+**Ready:** network security config, ProGuard/minification on release, permissions scoped correctly.
+
+---
+
+### 10r. Dashboard UI Overhaul — Compact Single-Screen Layout
+
+All tiles now fit on one screen without scrolling.
+
+**Header changes:**
+- `paddingTop` 40 dp → 16 dp, `paddingBottom` 20 dp → 10 dp
+- Greeting text 28 sp → 22 sp
+- "SAP · DroidX" label fixed (was wrapping due to `tvDate` being in the same row) — date moved to a bottom sub-row alongside Site
+- Date + Site both 11 sp, single-line, right-aligned date
+
+**Grid card changes:**
+- Card height 160 dp → 120 dp
+- Card margin 8 dp → 5 dp
+- Inner padding 16 dp → 10 dp
+- Icon size 35 dp → 23 dp (2/3 scale)
+- Icon → label gap 12 dp → 6 dp
+
+**Banner cards (Confirm WT, Profile):**
+- Height 100/90 dp → 72 dp
+- Profile icon 27 dp → 18 dp
+
+**Confirm WT tile added directly to Dashboard (Row 5, full-width, teal `#00695C`):**
+- Navigates straight to `ConfirmTaskActivity` without going through RF Menu
+- Icon: `ic_dash_confirm_wt.xml` (clipboard + checkmark vector)
+- Subtitle: "Scan & confirm warehouse tasks"
+- Added to search filter list as "Confirm WT"
+
+**Files changed:** `activity_dashboard.xml`, `DashboardActivity.kt`, `ic_dash_confirm_wt.xml` (new)
+
+---
+
+### 10s. RF Menu — Item 7 Not Rendering Fix
+
+**Problem:** Item 7 "CONFIRM TASK" was missing from the RF Menu on device.
+
+**Root cause:** `RecyclerView` with `android:layout_height="wrap_content"` inside a `ScrollView` has a known Android measurement bug — it only lays out items that fit within the initial visible area. Items 1–6 filled the visible space before the BottomAppBar, and item 7 was silently dropped from the layout pass.
+
+**Fix:** Replaced `RecyclerView` + `RFMenuAdapter` entirely with a plain `LinearLayout` (`id=menuContainer`) populated in `onCreate` via `LayoutInflater.inflate()` + `addView()`. No adapter, no RecyclerView, no measurement issue. The static list of 7 items is inflated directly — one `item_rf_menu.xml` row per item, click listener wired inline.
+
+**Bottom bar compaction:** The `BottomAppBar` was consuming ~80 dp. Replaced with a slim `LinearLayout` (44 dp, white, elevation 4 dp) containing a single `ImageButton` back arrow. `ScrollView paddingBottom` reduced from 80 dp → 44 dp.
+
+**Files changed:** `activity_rf_menu.xml`, `RFMenuActivity.kt`
+
+---
+
+### 10t. Test Data — Warehouse Tasks Included
+
+`/api/resetData` now also resets Warehouse Tasks:
+- Deletes all rows from `WAREHOUSE_TASKS`
+- Re-inserts 8 seed tasks with `STATUS='OPEN'`, all confirmation fields `NULL`
+- Response JSON includes `wtasks: 8`
+
+**Dashboard → ⋮ → View Test Data** now shows a `── WAREHOUSE TASKS ──` section listing task number, material, qty, source→dest bin, and status for each task.
+
+**Dashboard → ⋮ → Reset Test Data** dialog message updated to: *"Restore all Production, QC, and Warehouse Task data to original seed state?"*
+
+**Files changed:** `server.js`, `DashboardActivity.kt`
+
+---
+
+### 10q. Confirm Task Feature (v1.4.1 / v1.4.2)
+
+**RF Menu item 7 → Confirm Task**
+
+Operators fetch an open warehouse task by its 10-digit task number, verify the details, fill in confirmation specifics, attach up to 5 photos, capture GPS location, and save to HANA.
+
+#### Screen flow
+
+1. Enter or scan 10-digit task number → **Fetch Task**
+2. Read-only **Task Reference** card: Material, Task Qty, Route (Source Bin → Dest Bin)
+3. If the task was previously confirmed, an amber **Previous Confirmation** banner appears with Confirmed HU / Qty / Bin / By / At — and editable fields pre-populate from those confirmed values
+4. **Confirm Details** card (all editable, HU and Bin also scannable via ZXing):
+   - Confirmed HU
+   - Confirmed Quantity
+   - Destination Bin (required)
+5. **Photos** card — up to 5 photos (camera); horizontal thumbnail strip; counter `n / 5`
+6. **GPS Location** card — fetches via `FusedLocationProviderClient.getCurrentLocation(PRIORITY_HIGH_ACCURACY)`
+7. **Save & Confirm Task** button (becomes **Update Confirmation** on re-open)
+
+#### HANA table — WAREHOUSE_TASKS
+
+```sql
+COLUMN TABLE "WAREHOUSE_TASKS" (
+    "TASK_ID"           NVARCHAR(36)    NOT NULL DEFAULT SYSUUID,
+    "TASK_NUMBER"       NVARCHAR(10)    NOT NULL,
+    "HU"                NVARCHAR(30),
+    "MATERIAL"          NVARCHAR(20),
+    "MATERIAL_DESC"     NVARCHAR(100),
+    "QTY"               DOUBLE          NOT NULL DEFAULT 0,
+    "UOM"               NVARCHAR(3),
+    "SOURCE_BIN"        NVARCHAR(20),
+    "DEST_BIN"          NVARCHAR(20),
+    "STATUS"            NVARCHAR(20)    NOT NULL DEFAULT 'OPEN',
+    "CONFIRMED_HU"      NVARCHAR(30),
+    "CONFIRMED_QTY"     DOUBLE,
+    "CONFIRMED_BIN"     NVARCHAR(20),
+    "CONFIRMED_BY"      NVARCHAR(100),
+    "CONFIRMED_AT"      TIMESTAMP,
+    "LATITUDE"          DOUBLE,
+    "LONGITUDE"         DOUBLE,
+    "LOCATION_ACCURACY" DOUBLE,
+    "PHYSICAL_ADDRESS"  NVARCHAR(300),  -- reverse-geocoded street address
+    "CITY"              NVARCHAR(100),  -- reverse-geocoded city
+    "PHOTO"             NCLOB,          -- JSONArray of base64 JPEG strings (up to 5)
+    "CREATED_AT"        TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY ("TASK_ID")
+)
+```
+
+#### PATCH payload sent on confirm
+
+```json
+{
+  "STATUS": "CONFIRMED",
+  "CONFIRMED_HU": "PAL-20260506-0001",
+  "CONFIRMED_QTY": 48.0,
+  "CONFIRMED_BIN": "WH01-A3-R2",
+  "CONFIRMED_BY": "J.SMITH",
+  "LATITUDE": 48.858844,
+  "LONGITUDE": 2.294351,
+  "LOCATION_ACCURACY": 4.2,
+  "PHYSICAL_ADDRESS": "123 Warehouse Blvd, Houston, TX 77001",
+  "CITY": "Houston",
+  "PHOTO": "[\"<base64>\",\"<base64>\"]"
+}
+```
+
+#### Seed test data
+
+```bash
+curl -X POST https://f6c0e9f2trial-dev-forkqa-srv.cfapps.us10-001.hana.ondemand.com/api/taskSeed
+# Seeds 8 tasks: task numbers 0000000001–0000000008, STATUS=OPEN
+```
+
+#### Previously confirmed detection
+
+`fetchTask()` returns all confirmed fields. `populateForm()` checks `task.status == "CONFIRMED"`:
+- Shows `cardAlreadyConfirmed` (amber, `#FFF8E1`) with read-only confirmed details and a green **CONFIRMED** badge
+- Pre-populates editable fields from confirmed values (not original task values)
+- Changes button label to **Update Confirmation**
+
+#### MTAR changes
+
+| Version | Change |
+|---------|--------|
+| 1.4.1 | Added `WAREHOUSE_TASKS.hdbtable` to db; added WarehouseTasks entity + READ/UPDATE handlers + `taskSeed` endpoint to srv |
+| 1.4.2 | Added `CONFIRMED_HU` + `CONFIRMED_QTY` columns to table, CDS model, and UPDATE handler |
+
+Python patch script: `C:\mydata\ForkQA\mta_archives\patch_1.4.2.py`
+
+#### Key files
+
+| File | Change |
+|------|--------|
+| [`ConfirmTaskActivity.kt`](app/src/main/java/com/sap/droidx/ui/ConfirmTaskActivity.kt) | New — task fetch, editable confirm inputs (all scannable), multi-photo, GPS, previously-confirmed banner |
+| [`ConfirmTaskRepository.kt`](app/src/main/java/com/sap/droidx/data/ConfirmTaskRepository.kt) | New — `fetchTask()` (OData `$filter`), `confirmTask()` (PATCH with full payload) |
+| [`WarehouseTask.kt`](app/src/main/java/com/sap/droidx/data/WarehouseTask.kt) | New — data class with original task fields + confirmed fields |
+| [`activity_confirm_task.xml`](app/src/main/res/layout/activity_confirm_task.xml) | New — 5-card layout: task number, prev-confirmed banner, task reference, confirm inputs, photos, GPS, confirm button |
+| [`RFMenuActivity.kt`](app/src/main/java/com/sap/droidx/ui/RFMenuActivity.kt) | Added item 7 "CONFIRM TASK" routing to `ConfirmTaskActivity` |
+| [`AndroidManifest.xml`](app/src/main/AndroidManifest.xml) | Added `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `ConfirmTaskActivity` declaration |
+| [`app/build.gradle`](app/build.gradle) | Added `play-services-location:21.2.0` |
+| [`file_paths.xml`](app/src/main/res/xml/file_paths.xml) | Added `<cache-path name="task_photos" path="tasks/" />` |
+| `ForkQA/db/src/tables/WAREHOUSE_TASKS.hdbtable` | New HANA table |
+| `ForkQA/srv/catalog-service.cds` | Added `WarehouseTasks` entity |
+| `ForkQA/srv/catalog-service.js` | Added READ (with `$filter=TASK_NUMBER eq '...'` support) + UPDATE handlers |
+| `ForkQA/srv/server.js` | Added `POST /api/taskSeed` endpoint |
+
+
+---
+
+### 10u. GPS Reverse Geocoding + Web Dashboard WT Report Redesign (v1.4.3)
+
+#### Reverse geocoding on Android
+
+After the GPS fix is acquired in `ConfirmTaskActivity`, `reverseGeocode(lat, lon)` is called on an IO coroutine using Android's `Geocoder.getFromLocation()` (deprecated but functional sync API). The result populates:
+- `physicalAddress` — `addr.getAddressLine(0)` (full street address)
+- `city` — `addr.locality ?: addr.subAdminArea ?: addr.adminArea` (fallback chain)
+
+Both are shown below the coordinates in the GPS card (`tvAddress` TextView, visibility=GONE until geocode completes) and included in the PATCH payload when confirming.
+
+```kotlin
+private fun reverseGeocode(lat: Double, lon: Double) {
+    lifecycleScope.launch(Dispatchers.IO) {
+        try {
+            val addresses = Geocoder(this@ConfirmTaskActivity, Locale.getDefault())
+                .getFromLocation(lat, lon, 1)
+            val addr = addresses?.firstOrNull() ?: return@launch
+            physicalAddress = addr.getAddressLine(0) ?: ""
+            city = addr.locality ?: addr.subAdminArea ?: addr.adminArea ?: ""
+            withContext(Dispatchers.Main) {
+                // show tvAddress with combined display text
+            }
+        } catch (_: Exception) { }
+    }
+}
+```
+
+#### Web Dashboard — Warehouse Tasks tab redesign
+
+The SAPUI5 Table was replaced with a custom HTML5 table rendered by `renderWtaskTable(tasks)` inside a `sap.ui.core.HTML` control. Key improvements:
+
+| Before | After |
+|--------|-------|
+| SAPUI5 Table — ~100 px row height, massive whitespace | Custom HTML table — 44 px compact rows |
+| 15 separate columns, horizontal scrolling | 12 columns; Material+Desc stacked; GPS+Address merged |
+| Plain text STATUS | Colored pill badges (✓ CONFIRMED green / OPEN orange) |
+| Uniform white rows | CONFIRMED rows: `#F9FBE7` with 3px green left border accent |
+| No photo access | Camera button (📷) per row; opens photo dialog |
+| Address and City in separate columns | GPS coordinates + address stacked in one "GPS / Location" cell |
+
+**Photo viewer added:** Each row has a `📷` button calling `window._openWtPhoto(taskId)`. This fetches the task by ID (which returns PHOTO NCLOB), parses the base64 JSON array, and displays all images in a dialog. Exposed globally as `window._openWtPhoto` so HTML onclick attributes can call it.
+
+**Reset dialog fixed:** The page-header reset button now reads:
+> "Reset all Production, QC, and Warehouse Task data to original seed state?"
+
+#### MTAR patch fix
+
+`patch_1.4.3.py` was updated to include `app/index.html` in the srv inner-zip replacements (it was omitted in earlier versions, so web dashboard changes were not deployed with the MTAR).
+
+```python
+# srv_replacements — always include app/index.html
+new_inner = patch_inner_zip(src_outer, item.filename, {
+    "catalog-service.js" : open(SRV_JS_PATH,    "rb").read(),
+    "catalog-service.cds": open(SRV_CDS_PATH,   "rb").read(),
+    "server.js"          : open(SRV_SERVER_PATH, "rb").read(),
+    "app/index.html"     : open(SRV_INDEX_PATH,  "rb").read(),
+})
+```
+
+#### Files changed
+
+| File | Change |
+|------|--------|
+| [`ConfirmTaskActivity.kt`](app/src/main/java/com/sap/droidx/ui/ConfirmTaskActivity.kt) | Added `reverseGeocode()`, `tvAddress` visibility logic, `physicalAddress`+`city` state vars |
+| [`ConfirmTaskRepository.kt`](app/src/main/java/com/sap/droidx/data/ConfirmTaskRepository.kt) | Fixed `optString()` → `opt()+NULL` check for all fields; added `physicalAddress`+`city` to fetchTask + confirmTask |
+| [`WarehouseTask.kt`](app/src/main/java/com/sap/droidx/data/WarehouseTask.kt) | Added `physicalAddress: String = ""` and `city: String = ""` fields |
+| [`activity_confirm_task.xml`](app/src/main/res/layout/activity_confirm_task.xml) | Added `tvAddress` TextView (visibility=gone) in GPS card |
+| `ForkQA/db/src/tables/WAREHOUSE_TASKS.hdbtable` | Added `PHYSICAL_ADDRESS NVARCHAR(300)`, `CITY NVARCHAR(100)` columns |
+| `ForkQA/srv/catalog-service.cds` | Added `PHYSICAL_ADDRESS : String(300)`, `CITY : String(100)` |
+| `ForkQA/srv/catalog-service.js` | SELECT + UPDATE include PHYSICAL_ADDRESS + CITY |
+| `ForkQA/srv/app/index.html` | Full WT table redesign: compact HTML table, status pills, photo viewer dialog, merged GPS+address cell, reset message fix |
+| `ForkQA/mta_archives/patch_1.4.3.py` | Added `app/index.html` to srv replacements |
