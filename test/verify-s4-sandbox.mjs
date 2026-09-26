@@ -3,8 +3,11 @@
 // Without the key it reports "skipped" (exit 0) so the normal test run stays green; the gate only counts with the key.
 import { spawn } from 'node:child_process'
 import { join } from 'node:path'
+import { readFileSync } from 'node:fs'
 
-const KEY = process.env.SAP_API_KEY
+// key from the environment, or from the git-ignored .cdsrc-private.json ([sandbox] profile, see readme)
+const fromFile = () => { try { return JSON.parse(readFileSync(join(import.meta.dirname, '../.cdsrc-private.json'), 'utf8')).requires['[sandbox]'].API_EQUIPMENT.credentials.headers.APIKey } catch { return null } }
+const KEY = [process.env.SAP_API_KEY, fromFile()].find(k => k && !k.startsWith('PASTE-'))
 if (!KEY) { console.log('skipped: set SAP_API_KEY to run the S/4 sandbox gate'); process.exit(0) }
 
 const root = join(import.meta.dirname, '..'), PORT = 4108, BASE = `http://localhost:${PORT}`
