@@ -43,6 +43,10 @@ service ManageService {
     action generateA3() returns Kaizens;
   };
 
+  // S/4HANA: pull a plant's machines into the local cache (then scannable offline)
+  @requires: ['PlantManager', 'Admin']
+  action syncEquipment(plant : String(10) @mandatory @title: 'S/4 plant code') returns Integer;
+
   entity Tasks    as projection on db.Tasks;
   entity Benefits as projection on db.Benefits;
 

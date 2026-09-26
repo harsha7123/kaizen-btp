@@ -1,0 +1,5 @@
+Equipment;ValidityEndDate;EquipmentName;FunctionalLocation;MaintenancePlant;MainWorkCenter;MainWorkCenterPlant
+10000045;9999-12-31;Press Line 5 Hydraulic Unit;1010-PR-L5-HYD;1010;PRESS-L5;1010
+10000046;9999-12-31;Press Line 5 Feeder;1010-PR-L5-FED;1010;PRESS-L5;1010
+10000102;9999-12-31;Paint Robot R12;1010-PT-R12;1010;PAINT-01;1010
+20000007;9999-12-31;Injection Molding Machine IM-7;1710-IM-07;1710;MOLD-02;1710

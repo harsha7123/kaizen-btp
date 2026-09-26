@@ -10,7 +10,7 @@ const auth = { authorization: 'Basic ' + Buffer.from('sam:').toString('base64') 
 const api = path => fetch(`${BASE}/odata/v4/kaizen/${path}`, { headers: auth })
 const check = (ok, msg) => { if (!ok) throw new Error(msg) }
 
-const server = spawn(process.execPath, [join(root, 'node_modules/@sap/cds/bin/serve.js')],
+const server = spawn(process.execPath, [join(root, 'node_modules/@sap/cds/bin/serve.js'), 'all', '--with-mocks', '--in-memory'],
   { cwd: root, env: { ...process.env, PORT: String(PORT), NODE_ENV: 'development' }, stdio: ['ignore', 'ignore', 'pipe'] })
 let browser, failed = false
 try {
@@ -86,6 +86,11 @@ try {
   await page.locator('.item[data-state=done]', { hasText: 'After photo' }).waitFor({ timeout: 15000 })
   const kinds = (await (await api(`Photos?$filter=kaizen_ID eq ${k.ID}&$select=kind`)).json()).value.map(p => p.kind).sort()
   check(JSON.stringify(kinds) === '["After","Before"]', `expected Before + After photos, got ${JSON.stringify(kinds)}`)
+
+  // S/4: a machine that is not on the phone yet is looked up (server -> S/4 mock) and then known
+  await page.click('#tab-new')
+  await page.fill('#equipment', '10000045')
+  await page.locator('#machine', { hasText: 'Press Line 5 Hydraulic Unit' }).waitFor({ timeout: 10000 })
   console.log('offline capture verified')
 } catch (e) {
   failed = true

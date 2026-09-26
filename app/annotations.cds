@@ -27,6 +27,7 @@ annotate db.Kaizens with {
   fiveWhy          @title: '5-Why analysis'   @UI.MultiLineText;
   similarTo        @title: 'Possible duplicate of' @Common.Text: similarTo.title @Common.TextArrangement: #TextLast;
   similarity       @title: 'Similarity';
+  pmNotification   @title: 'S/4 notification';
 }
 annotate db.Photos with {
   kind @title: 'Kind'; content @title: 'Photo'; createdBy @title: 'By'; createdAt @title: 'Taken at';
@@ -65,7 +66,8 @@ annotate s.Kaizens with @(
   UI.SelectionFields: [ status_code, plant_ID, pillar_code, equipment_ID, isSafety ],
   UI.LineItem: [
     { Value: number, ![@UI.Importance]: #High }, { Value: title, ![@UI.Importance]: #High }, { Value: status_code, ![@UI.Importance]: #High }, { Value: nextRole, ![@UI.Importance]: #High }, { Value: plant_ID, ![@UI.Importance]: #High }, { Value: pillar_code, ![@UI.Importance]: #High },
-    { Value: equipment_ID, ![@UI.Importance]: #High }, { Value: isSafety, ![@UI.Importance]: #High }, { Value: estimatedBenefit, ![@UI.Importance]: #High }, { Value: createdBy }, { Value: createdAt }
+    { Value: equipment_ID, ![@UI.Importance]: #High }, { Value: isSafety, ![@UI.Importance]: #High }, { Value: estimatedBenefit, ![@UI.Importance]: #High }, { Value: createdBy }, { Value: createdAt },
+    { $Type: 'UI.DataFieldForAction', Action: 'ManageService.EntityContainer/syncEquipment', Label: 'Sync machines from S/4HANA' }
   ],
   UI.PresentationVariant: { SortOrder: [{ Property: number, Descending: true }], Visualizations: ['@UI.LineItem'] },
   UI.SelectionPresentationVariant #inbox: {

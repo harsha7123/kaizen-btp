@@ -90,3 +90,24 @@ Security: AI output is untrusted (cut to size, pillar codes and booleans validat
 - [ ] G4: the same contract tests pass against the real SAP AI Core (needs an AI Core instance with an orchestration deployment)
   CHECK: set AICORE_SERVICE_KEY (service key JSON) and AICORE_DEPLOYMENT_URL, then node --test --test-reporter=tap test/ai.test.js (adds "AI contract: aicore (real SAP AI Core)")
   EVIDENCE: pending: the BTP trial has no generative AI hub; runs when a paid/partner AI Core is available
+
+# Gates: phase 5, S/4HANA integration
+
+OWNS: srv/s4.js, srv/external/**, test/s4.test.js, test/verify-s4-sandbox.mjs, S/4 parts of srv/*.js, package.json (requires, kaizen)
+
+Scope: API_EQUIPMENT (read) and API_MAINTNOTIFICATION (write) as OData V2 remote services. Locally mocked (srv/external + data, `--with-mocks`); on BTP through the subscriber's destination `S4HANA` ([production] credentials). Unknown machines are looked up in S/4 on scan or on create and cached in the tenant's tables (offline-scannable); plant managers sync a whole plant (`syncEquipment`); `kaizen.pmWriteBack` (default off) creates a maintenance notification when a kaizen starts, and a failing S/4 never blocks the kaizen (history note instead). S/4 definitions create no HANA tables.
+
+- [x] G1: S/4 lookup, caching, plant sync (role-restricted), PM write-back toggle and S/4 outage handling
+  CHECK: node --test --test-reporter=tap test/s4.test.js
+  EXPECT: /# pass [1-9]\d*\r?\n# fail 0/
+  EVIDENCE: 2026-09-26, Node 24.21.0: # pass 5 / # fail 0. Negative controls: no caching -> "cached for offline use" fails; toggle ignored -> "PM write-back ... (toggle)" fails.
+
+- [x] G2: the phone app resolves a machine that is only in S/4 (browser, S/4 mocked)
+  CHECK: node test/verify-capture.mjs
+  EXPECT: offline capture verified
+  EVIDENCE: 2026-09-26, Edge: offline capture verified (includes typing 10000045 -> "Press Line 5 Hydraulic Unit").
+
+- [ ] G3: QR scan resolves LIVE equipment from the SAP Business Accelerator Hub sandbox
+  CHECK: SAP_API_KEY=<key from api.sap.com> node test/verify-s4-sandbox.mjs
+  EXPECT: live S/4 equipment resolved
+  EVIDENCE: pending: needs Harsha's free API key (without it the script prints "skipped")

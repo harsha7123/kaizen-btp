@@ -1,13 +1,14 @@
 import cds from '@sap/cds'
 import { draftFromPhoto, spend } from './ai/index.js'
 import { findSimilar } from './ai/similar.js'
+import { lookupEquipment, createNotification } from './s4.js'
 
 // Kaizen lifecycle: Submitted -> InReview -> Approved -> InProgress -> Verification -> Closed
 //                            \-> Rejected (from Submitted / InReview)
 // Shared by KaizenService (phone app, non-draft) and ManageService (Fiori, draft), which extends this class.
 export const MANAGERS = ['Supervisor', 'CIManager', 'PlantManager', 'EHS', 'Admin']
 const VERIFIERS = ['CIManager', 'PlantManager', 'Admin']
-const WORKFLOW_FIELDS = ['number', 'status_code', 'step', 'route_ID', 'nextRole', 'closedAt', 'fiveWhy', 'a3', 'similarTo_ID', 'similarity']
+const WORKFLOW_FIELDS = ['number', 'status_code', 'step', 'route_ID', 'nextRole', 'closedAt', 'fiveWhy', 'a3', 'similarTo_ID', 'similarity', 'pmNotification']
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024 // the phone sends ~0.3 MB; anything near this limit is not a phone photo
 
@@ -60,7 +61,7 @@ export default class KaizenService extends cds.ApplicationService {
       d.step = 0
       d.closedAt = null
       if (d.equipment_ID && !d.plant_ID) {
-        const eq = await SELECT.one.from('kaizen.Equipment', d.equipment_ID)
+        const eq = await SELECT.one.from('kaizen.Equipment', d.equipment_ID) ?? await lookupEquipment(d.equipment_ID) // S/4 fallback
         if (!eq) return req.reject(400, `Unknown equipment ${d.equipment_ID}`, 'equipment_ID')
         d.plant_ID = eq.plant_ID
       }
@@ -100,7 +101,17 @@ export default class KaizenService extends cds.ApplicationService {
       const k = await load(req)
       if (k.status_code !== 'Approved') return req.reject(409, 'Only approved kaizens can be started')
       const { owner, dueDate } = req.data
-      return move(req, k, 'InProgress', { owner, dueDate })
+      const started = await move(req, k, 'InProgress', { owner, dueDate })
+      if (!cds.env.kaizen?.pmWriteBack || !k.equipment_ID) return started
+      // PM write-back: a failing S/4 never blocks the kaizen; the history says why there is no notification
+      try {
+        const pmNotification = await createNotification({ ...k, owner })
+        await UPDATE(Kaizens, k.ID).with({ pmNotification })
+      } catch (e) {
+        cds.log('s4').warn('PM notification failed:', e.message)
+        await INSERT.into(StatusHistory).entries({ kaizen_ID: k.ID, fromStatus: 'InProgress', toStatus: 'InProgress', note: `S/4 maintenance notification not created: ${e.message}`.slice(0, 500) })
+      }
+      return SELECT.one.from(req.subject)
     })
 
     this.on('requestVerification', 'Kaizens', async req => {
@@ -190,6 +201,13 @@ export default class KaizenService extends cds.ApplicationService {
       catch (e) { cds.log('ai').warn(e.message); return req.reject(502, 'The AI assistant is not available right now') }
     })
     this.on('similar', req => findSimilar(req.data))
+
+    // phone scans a machine that is not cached yet: look it up in S/4 once, then it is local (and offline) for everyone
+    this.on('READ', 'Equipment', async (req, next) => {
+      const found = await next()
+      if (found || !req.query.SELECT.one || !req.data?.ID) return found
+      return (await lookupEquipment(req.data.ID)) ? SELECT.one.from(req.subject) : found
+    })
 
     return super.init()
   }

@@ -1,6 +1,7 @@
 import cds from '@sap/cds'
 import KaizenService, { isAny } from './kaizen-service.js'
 import { fiveWhy, a3, spend } from './ai/index.js'
+import { syncPlant } from './s4.js'
 
 const DECIDERS = ['Supervisor', 'CIManager', 'PlantManager', 'EHS']
 const CLOSERS = ['CIManager', 'PlantManager', 'Admin']
@@ -109,6 +110,11 @@ export default class ManageService extends KaizenService {
       const report = await ask(req, () => a3({ ...k, createdAt: new Date(k.createdAt).toISOString() }))
       await UPDATE(Kaizens, ID).with({ a3: JSON.stringify(report) })
       return SELECT.one.from(req.subject)
+    })
+
+    this.on('syncEquipment', async req => {
+      try { return await syncPlant(req.data.plant) }
+      catch (e) { return req.reject(e.status ?? 502, e.status ? e.message : `S/4HANA sync failed: ${e.message}`) }
     })
 
     await super.init()

@@ -32,3 +32,19 @@ Default provider is the free stand-in (`cds.requires.ai.kind: "stub"`). To use S
    ```
 3. Bind the `aicore` service (on BTP), or locally set `AICORE_SERVICE_KEY` to the service key JSON.
 4. Prove it: with `AICORE_SERVICE_KEY` and `AICORE_DEPLOYMENT_URL` set, `node --test test/ai.test.js` runs the same contract tests against the real service.
+
+## S/4HANA
+
+Locally the Equipment and Maintenance Notification APIs are mocked (`npm run watch`; sample machines 10000045, 10000046, 10000102, 20000007 in `srv/external/data`).
+
+Live SAP sandbox (read-only): get a free API key at https://api.sap.com (log in, Settings, Show API Key), then either
+
+- run the gate: `SAP_API_KEY=<key> node test/verify-s4-sandbox.mjs`, or
+- use it in the app: add to `.cdsrc-private.json` (git-ignored, never commit keys) and run `npm run sandbox`:
+  ```json
+  { "requires": { "[sandbox]": { "API_EQUIPMENT": { "credentials": {
+      "url": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_EQUIPMENT",
+      "headers": { "APIKey": "<your key>" } } } } } }
+  ```
+
+On BTP each customer creates a destination named `S4HANA` to their S/4 system (Cloud Connector for on-premise). PM write-back is off by default: set `cds.kaizen.pmWriteBack: true`.

@@ -4,6 +4,8 @@
   "type": "module",
   "dependencies": {
     "@cap-js/hana": "^3.1.1",
+    "@sap-cloud-sdk/http-client": "^4.9.1",
+    "@sap-cloud-sdk/resilience": "^4.9.1",
     "@sap/cds": "^10",
     "@sap/cds-mtxs": "^4",
     "@sap/xssec": "^4.15.0"
@@ -20,7 +22,8 @@
     "test": "node --test --test-reporter=tap",
     "sidecar": "cds watch mtx/sidecar",
     "watch:mtx": "cds watch --with-mtx",
-    "hybrid": "cds watch --profile hybrid"
+    "hybrid": "cds watch --profile hybrid",
+    "sandbox": "cds watch --profile sandbox"
   },
   "private": true,
   "cds": {
@@ -101,12 +104,36 @@
       },
       "ai": {
         "kind": "stub"
+      },
+      "API_EQUIPMENT": {
+        "kind": "odata-v2",
+        "model": "srv/external/API_EQUIPMENT",
+        "[production]": {
+          "credentials": {
+            "destination": "S4HANA",
+            "path": "/sap/opu/odata/sap/API_EQUIPMENT"
+          }
+        }
+      },
+      "API_MAINTNOTIFICATION": {
+        "kind": "odata-v2",
+        "model": "srv/external/API_MAINTNOTIFICATION",
+        "[production]": {
+          "credentials": {
+            "destination": "S4HANA",
+            "path": "/sap/opu/odata/sap/API_MAINTNOTIFICATION"
+          }
+        }
       }
     },
     "server": {
       "body_parser": {
         "limit": "1mb"
       }
+    },
+    "kaizen": {
+      "pmWriteBack": false,
+      "pmNotificationType": "M1"
     }
   }
 }

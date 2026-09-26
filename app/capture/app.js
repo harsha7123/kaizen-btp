@@ -3,7 +3,7 @@
 // gets 409 from the server instead of creating a duplicate.
 const API = '/odata/v4/kaizen'
 const $ = id => document.getElementById(id)
-const state = { mode: 'new', photos: [], pillar: null, pick: null, equipment: [], open: [], syncing: false, aiDrafted: false }
+const state = { mode: 'new', photos: [], pillar: null, pick: null, equipment: [], plants: [], open: [], syncing: false, aiDrafted: false }
 
 // ---- IndexedDB queue ----
 const db = new Promise((ok, fail) => {
@@ -90,6 +90,7 @@ async function loadMasterData () {
 }
 function apply ({ equipment, plants, pillars, open = [] }) {
   state.open = open // kaizens in progress, for After photos
+  state.plants = plants
   state.equipment = equipment.map(e => ({ ...e, plantName: plants.find(p => p.ID === e.plant_ID)?.name ?? e.plant_ID }))
   $('equipment-list').replaceChildren(...equipment.map(e => new Option(e.name, e.ID)))
   $('pillars').replaceChildren(...pillars.map(p => {
@@ -110,9 +111,27 @@ function setEquipment (text) {
   $('equipment').value = idFrom(text).trim().toUpperCase()
   showMachine()
 }
+// a machine missing from the phone's list: ask the server once (it looks it up in S/4 and caches it for everyone)
+let resolving
+function resolveMachine (id) {
+  clearTimeout(resolving)
+  if (!navigator.onLine || id.length < 3) return
+  resolving = setTimeout(async () => {
+    try {
+      const e = await send('GET', `/Equipment('${encodeURIComponent(id.replace(/'/g, "''"))}')?$select=ID,name,plant_ID,workCenter_ID`)
+      if (!e || state.equipment.some(x => x.ID === e.ID)) return
+      state.equipment.push({ ...e, plantName: state.plants.find(p => p.ID === e.plant_ID)?.name ?? e.plant_ID })
+      const cached = JSON.parse(localStorage.getItem('kaizen-master') || 'null')
+      if (cached) { cached.equipment.push(e); localStorage.setItem('kaizen-master', JSON.stringify(cached)) }
+      if ($('equipment').value.trim().toUpperCase() === e.ID) showMachine()
+    } catch { /* unknown everywhere or offline: the box keeps saying "Unknown machine" */ }
+  }, 400)
+}
+
 function showMachine () {
   const id = $('equipment').value.trim().toUpperCase(), box = $('machine')
   const e = state.equipment.find(x => x.ID === id)
+  if (id && !e) resolveMachine(id)
   box.hidden = !id
   box.classList.toggle('unknown', !e)
   box.innerHTML = e ? `<b></b><span></span>` : `<b>Unknown machine</b><span>Check the ID or scan again</span>`

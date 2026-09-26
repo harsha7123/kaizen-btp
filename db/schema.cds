@@ -9,7 +9,7 @@ entity Plants {
 }
 
 entity WorkCenters {
-  key ID    : String(10);
+  key ID    : String(20); // S/4: "<plant>/<work center>" (work centers are unique per plant only)
       name  : String(80);
       plant : Association to Plants;
 }
@@ -52,6 +52,8 @@ entity Kaizens : cuid, managed {
   a3          : LargeString @readonly; // JSON: background, currentCondition, goal, rootCause, countermeasures, results, followUp
   similarTo   : Association to Kaizens @readonly; // best match from the duplicate check at creation
   similarity  : Decimal(3, 2) @readonly;
+  // S/4 PM write-back (Phase 5): maintenance notification created when the kaizen starts
+  pmNotification : String(12) @readonly;
   route       : Association to WorkflowRoutes @readonly;
   equipment   : Association to Equipment;
   plant       : Association to Plants; // derived from equipment when scanned
