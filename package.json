@@ -1,0 +1,94 @@
+{
+  "name": "kaizen-btp",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@sap/cds": "^10",
+    "@sap/cds-mtxs": "^4"
+  },
+  "devDependencies": {
+    "@cap-js/cds-test": "^1.0.2",
+    "@cap-js/sqlite": "^3"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "watch": "cds watch",
+    "test": "node --test",
+    "sidecar": "cds watch mtx/sidecar",
+    "watch:mtx": "cds watch --with-mtx"
+  },
+  "private": true,
+  "cds": {
+    "profile": "with-mtx-sidecar",
+    "requires": {
+      "[production]": {
+        "multitenancy": true
+      },
+      "[with-mtx]": {
+        "multitenancy": true
+      },
+      "auth": {
+        "kind": "mocked",
+        "users": {
+          "maria": {
+            "password": "",
+            "roles": [
+              "Operator"
+            ],
+            "tenant": "t1"
+          },
+          "sam": {
+            "password": "",
+            "roles": [
+              "Supervisor"
+            ],
+            "tenant": "t1"
+          },
+          "klaus": {
+            "password": "",
+            "roles": [
+              "CIManager"
+            ],
+            "tenant": "t1"
+          },
+          "petra": {
+            "password": "",
+            "roles": [
+              "PlantManager"
+            ],
+            "tenant": "t1"
+          },
+          "eva": {
+            "password": "",
+            "roles": [
+              "EHS"
+            ],
+            "tenant": "t1"
+          },
+          "admin": {
+            "password": "",
+            "roles": [
+              "Admin"
+            ],
+            "tenant": "t1"
+          },
+          "erin": {
+            "password": "",
+            "roles": [
+              "Operator",
+              "CIManager"
+            ],
+            "tenant": "t2"
+          },
+          "yves": {
+            "password": "",
+            "roles": [
+              "cds.Subscriber",
+              "internal-user"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

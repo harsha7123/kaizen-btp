@@ -1,0 +1,5 @@
+ID;name;functionalLocation;workCenter_ID;plant_ID
+P-1042;Hydraulic Pump P-1042;DE_HH-L3-HYD-01;HH-L3;DE_HH
+P-2042;Hydraulic Pump P-2042;DE_MUC-L1-HYD-01;MUC-L1;DE_MUC
+P-3042;Hydraulic Pump P-3042;PL_WAW-L2-HYD-01;WAW-L2;PL_WAW
+C-1100;Conveyor C-1100;DE_HH-L3-CNV-01;HH-L3;DE_HH

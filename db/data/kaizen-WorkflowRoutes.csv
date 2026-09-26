@@ -1,0 +1,4 @@
+ID;plant_ID;pillar_code;maxBenefit;approvers;priority
+a1b2c3d4-0000-4000-8000-000000000001;DE_HH;AM;5000;Supervisor,CIManager;10
+a1b2c3d4-0000-4000-8000-000000000002;;;5000;Supervisor,CIManager;500
+a1b2c3d4-0000-4000-8000-000000000003;;;;Supervisor,CIManager,PlantManager;1000
