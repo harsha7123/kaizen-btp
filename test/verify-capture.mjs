@@ -37,6 +37,12 @@ try {
   await page.reload()
   await page.locator('#pillars button').first().waitFor()
   check((await page.textContent('#net')).startsWith('Offline'), 'app does not show offline state')
+  await page.fill('#title', 'No machine given')
+  await page.click('#pillars button[data-code=AM]')
+  await page.click('#submit')
+  check(await page.isVisible('#equipment-err'), 'kaizen without a machine was not stopped')
+  await page.waitForTimeout(500) // a wrongly queued kaizen needs a moment to appear
+  check(await page.locator('.item[data-state=pending]').count() === 0, 'kaizen without a machine was queued (would fail at sync)')
   await page.fill('#equipment', 'p-1042')
   check((await page.textContent('#machine')).includes('Plant Hamburg'), 'machine not resolved from offline cache')
   await page.setInputFiles('#photo', join(root, 'app/capture/icon-512.png'))

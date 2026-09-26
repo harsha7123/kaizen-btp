@@ -228,11 +228,15 @@ async function submit (ev) {
   ev.preventDefault()
   if (state.mode === 'after') return submitAfter()
   const title = $('title').value.trim()
+  const equipment = $('equipment').value.trim().toUpperCase()
+  // the server derives the plant from the machine, so a queued kaizen without a known machine would fail at sync
+  const machineOk = !!equipment && (!state.equipment.length || state.equipment.some(e => e.ID === equipment))
+  $('equipment-err').hidden = machineOk
   $('title-err').hidden = !!title
   $('pillar-err').hidden = !!state.pillar
+  if (!machineOk) return $('equipment').focus()
   if (!title) return $('title').focus()
   if (!state.pillar) return $('pillars').scrollIntoView({ behavior: 'smooth', block: 'center' })
-  const equipment = $('equipment').value.trim().toUpperCase()
   const benefit = parseFloat($('benefit').value)
   await queue.put({
     ID: crypto.randomUUID(),
@@ -309,7 +313,7 @@ $('form').addEventListener('submit', submit)
 $('scan').onclick = scan
 $('tab-new').onclick = () => setMode('new')
 $('tab-after').onclick = () => setMode('after')
-$('equipment').addEventListener('input', showMachine)
+$('equipment').addEventListener('input', () => { $('equipment-err').hidden = true; showMachine() })
 $('title').addEventListener('input', () => { if ($('title').value.trim()) $('title-err').hidden = true })
 $('photo-btn').onclick = () => $('photo').click()
 $('photo').onchange = async e => {
