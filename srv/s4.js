@@ -13,7 +13,7 @@ async function connect (name) {
 
 const toLocal = e => ({
   ID: e.Equipment, name: e.EquipmentName ?? e.Equipment, functionalLocation: e.FunctionalLocation,
-  plant_ID: e.MaintenancePlant, workCenter_ID: e.MainWorkCenter ? `${e.MainWorkCenterPlant ?? e.MaintenancePlant}/${e.MainWorkCenter}` : null,
+  plant_ID: e.MaintenancePlant || null, workCenter_ID: e.MainWorkCenter ? `${e.MainWorkCenterPlant ?? e.MaintenancePlant}/${e.MainWorkCenter}` : null,
   workCenterName: e.MainWorkCenter
 })
 

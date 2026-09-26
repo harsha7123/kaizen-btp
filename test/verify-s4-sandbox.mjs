@@ -15,7 +15,7 @@ const SANDBOX = 'https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_E
 const check = (ok, msg) => { if (!ok) throw new Error(msg) }
 
 // 1. pick a real machine straight from the sandbox
-const direct = await fetch(`${SANDBOX}/Equipment?$top=1&$select=Equipment,EquipmentName,MaintenancePlant&$format=json`, { headers: { APIKey: KEY, accept: 'application/json' } })
+const direct = await fetch(`${SANDBOX}/Equipment?$top=1&$select=Equipment,EquipmentName,MaintenancePlant&$filter=MaintenancePlant ne ''&$format=json`, { headers: { APIKey: KEY, accept: 'application/json' } })
 if (!direct.ok) { console.error(`sandbox rejected the request: HTTP ${direct.status} (check the API key)`); process.exit(1) }
 const live = (await direct.json()).d.results[0]
 console.log(`  sandbox has ${live.Equipment} "${live.EquipmentName}" (plant ${live.MaintenancePlant})`)
@@ -29,10 +29,15 @@ try {
   for (let i = 0; ; i++) { try { await fetch(BASE); break } catch { check(i < 60, 'server did not start'); await new Promise(r => setTimeout(r, 500)) } }
   const auth = { authorization: 'Basic ' + Buffer.from('maria:').toString('base64') }
   const res = await fetch(`${BASE}/odata/v4/kaizen/Equipment('${encodeURIComponent(live.Equipment)}')`, { headers: auth })
-  check(res.ok, `app could not resolve ${live.Equipment}: HTTP ${res.status} ${await res.text()}`)
+  if (!res.ok) throw new Error(`app could not resolve ${live.Equipment}: HTTP ${res.status} ${await res.text()}`)
   const e = await res.json()
   check(e.name === live.EquipmentName && e.plant_ID === live.MaintenancePlant, `wrong machine data: ${JSON.stringify(e)}`)
   console.log(`  app resolved it: ${e.ID} "${e.name}", plant ${e.plant_ID}, work center ${e.workCenter_ID}`)
+  const k = await fetch(`${BASE}/odata/v4/kaizen/Kaizens`, { method: 'POST', headers: { ...auth, 'content-type': 'application/json' }, body: JSON.stringify({ title: 'Sandbox check', pillar_code: 'AM', equipment_ID: live.Equipment }) })
+  if (!k.ok) throw new Error(`kaizen on the live machine failed: HTTP ${k.status} ${await k.text()}`)
+  const created = await k.json()
+  check(created.plant_ID === live.MaintenancePlant, `kaizen plant ${created.plant_ID} != S/4 plant ${live.MaintenancePlant}`)
+  console.log(`  kaizen ${created.number} created on it, plant ${created.plant_ID} taken from S/4`)
   console.log('live S/4 equipment resolved')
 } catch (e) {
   failed = true

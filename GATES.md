@@ -107,10 +107,10 @@ Scope: API_EQUIPMENT (read) and API_MAINTNOTIFICATION (write) as OData V2 remote
   EXPECT: offline capture verified
   EVIDENCE: 2026-09-26, Edge: offline capture verified (includes typing 10000045 -> "Press Line 5 Hydraulic Unit").
 
-- [ ] G3: QR scan resolves LIVE equipment from the SAP Business Accelerator Hub sandbox
+- [x] G3: QR scan resolves LIVE equipment from the SAP Business Accelerator Hub sandbox
   CHECK: SAP_API_KEY=<key from api.sap.com> node test/verify-s4-sandbox.mjs
   EXPECT: live S/4 equipment resolved
-  EVIDENCE: pending: needs Harsha's free API key (without it the script prints "skipped")
+  EVIDENCE: 2026-09-26, key in .cdsrc-private.json: sandbox machine 10001849 "Multi Eco 33i" (plant 1710) resolved through the app (GET /Equipment) and a kaizen created on it with plant 1710 from S/4. Found on the way: sandbox machines without a maintenance plant are now cached with plant null (kaizens on them need a plant).
 
 # Gates: phase 6, deploy the demo to the BTP Trial
 
