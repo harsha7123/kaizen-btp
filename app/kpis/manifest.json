@@ -1,0 +1,30 @@
+{
+  "_version": "1.65.0",
+  "sap.app": {
+    "id": "kaizen.kpis",
+    "type": "application",
+    "title": "Kaizen KPIs",
+    "applicationVersion": { "version": "1.0.0" },
+    "dataSources": {
+      "main": { "uri": "/odata/v4/manage/", "type": "OData", "settings": { "odataVersion": "4.0" } }
+    }
+  },
+  "sap.ui": { "technology": "UI5", "deviceTypes": { "desktop": true, "tablet": true, "phone": true } },
+  "sap.ui5": {
+    "flexEnabled": false,
+    "dependencies": { "minUI5Version": "1.136.0", "libs": { "sap.m": {}, "sap.ui.core": {}, "sap.fe.templates": {} } },
+    "models": {
+      "": { "dataSource": "main", "preload": true, "settings": { "operationMode": "Server", "autoExpandSelect": true, "earlyRequests": true } }
+    },
+    "routing": {
+      "routes": [{ "pattern": ":?query:", "name": "KpisList", "target": "KpisList" }],
+      "targets": {
+        "KpisList": {
+          "type": "Component", "id": "KpisList", "name": "sap.fe.templates.ListReport",
+          "options": { "settings": { "contextPath": "/Kpis", "variantManagement": "None", "initialLoad": "Enabled", "hideFilterBar": true } }
+        }
+      }
+    }
+  },
+  "sap.fiori": { "registrationIds": [], "archeType": "analytical" }
+}

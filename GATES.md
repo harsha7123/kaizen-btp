@@ -41,4 +41,28 @@ Note: the plan said "Lighthouse PWA check", but Lighthouse 12 removed its PWA ca
   EVIDENCE: 2026-09-26, Edge (Playwright 1.63), Node 24.21.0: offline capture verified (exit 0). Negative controls: without service worker -> "service worker did not activate" (exit 1); with photo upload skipped -> "Before photo missing" (exit 1); After photo saved as Before -> "expected Before + After photos" (exit 1).
 
 - [ ] G3: Harsha submits a kaizen on a real phone in under 60 s, including one in airplane mode that syncs after reconnecting
+  EVIDENCE (partial): 2026-09-26, Android, Chrome, via HTTPS tunnel: online submit -> KAI-2026-0001 sent; airplane mode -> "Offline · 1 waiting" -> synced after reconnect (server log: POST received). The sync was rejected because no machine was given -> fixed (a470117: known machine required before queueing, covered in verify-capture.mjs). Still to check on the phone: under-60-s timing, voice input, QR scan.
+
+# Gates: phase 3, approvals, management and security
+
+OWNS: srv/manage-service.*, srv/kaizen-service.js, db/schema.cds, app/annotations.cds, app/kaizens/**, app/kpis/**, app/index.html, test/manage.test.js, test/verify-manage.mjs, package.json (auth)
+
+Scope: Fiori Elements "Manage Kaizens" (inbox tab "Waiting for me" + "All kaizens", object page with workflow buttons shown only when allowed, draft editing of text, tasks and benefits, photos, history), "Kaizen KPIs" (count, open/closed, avg cycle days, verified EUR by plant x pillar), start page. UI5 pinned to 1.136.22 (long-term maintenance to Q4/2032).
+Security: separate ManageService for managers only; photos only on own kaizens and only images up to 5 MB, replaced only by the uploader; tasks/benefits written by managers only (task owner may tick off own task); operators edit only until the first approval; only CI/plant managers verify, change or remove a verified benefit, also through drafts and deep writes; workflow fields only move through actions (stale drafts cannot roll back a status); kaizens cannot be deleted from the UI; mocked users only in [development], XSUAA in [production].
+
+- [x] G1: security and manager-service rules hold at the API
+  CHECK: node --test --test-reporter=tap test/manage.test.js
+  EXPECT: /# pass [1-9]\d*\r?\n# fail 0/
+  EVIDENCE: 2026-09-26, Node 24.21.0: # pass 9 / # fail 0. Negative controls (each rule removed once): workflow-field guard -> "a stale draft cannot roll back" fails; deep benefit guard -> "only CI managers verify benefits" fails; photo ownership -> "operators cannot touch..." fails; inbox filter -> "inbox follows the approval route" fails; operator edit limit -> "operators edit only until the first approval" fails.
+
+- [x] G2: the Maria scenario is clickable end to end in the real apps (phone app -> Fiori inbox/approve/start/edit -> gate blocks -> After photo -> close -> KPI page)
+  CHECK: node test/verify-manage.mjs
+  EXPECT: maria scenario clickable
+  EVIDENCE: 2026-09-26, Edge (Playwright 1.63), UI5 1.136.22, Node 24.21.0: maria scenario clickable (exit 0). Negative controls: KPI ignores savings -> "KPI row does not show the verified saving" (exit 1); verification gate removed -> gate message never appears (exit 1).
+
+- [x] G3: the same manager flows work against real HANA Cloud (hybrid)
+  CHECK: cds deploy --to hana --profile hybrid, then Fiori-style inbox query, draft edit + activate, KPIs through ManageService
+  EVIDENCE: 2026-09-26, kaizen-hana (trial, us10): deploy "Make succeeded (21 files)"; inbox query with draft filter returns the new kaizen with canApprove=true for sam; draft edit + activate persisted; KPI total row returned.
+
+- [ ] G4: Harsha clicks through the demo script as sam / klaus / petra on their PC and a phone
   EVIDENCE: pending

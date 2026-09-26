@@ -44,6 +44,8 @@ entity Kaizens : cuid, managed {
   estimatedBenefit : Decimal(15, 2); // EUR/year, drives routing threshold
   status      : Association to Statuses default 'Submitted' @readonly;
   step        : Integer default 0 @readonly; // index into route.approvers
+  nextRole    : String(20) @readonly; // who acts next: an approver role, 'CIManager' (start/close) or 'Owner'; drives the inbox
+  closedAt    : Timestamp @readonly; // for cycle time KPIs
   route       : Association to WorkflowRoutes @readonly;
   equipment   : Association to Equipment;
   plant       : Association to Plants; // derived from equipment when scanned
@@ -57,9 +59,9 @@ entity Kaizens : cuid, managed {
 
 entity Photos : cuid, managed {
   kaizen    : Association to Kaizens;
-  kind      : String(6) enum { Before; After } default 'Before';
+  @assert.range kind : String(6) enum { Before; After } default 'Before';
   // ponytail: HANA BLOB for the trial demo; move to Object Store when photo volume matters
-  content   : LargeBinary @Core.MediaType: mediaType;
+  content   : LargeBinary @Core.MediaType: mediaType @Core.AcceptableMediaTypes: ['image/jpeg', 'image/png', 'image/webp'];
   mediaType : String(40) @Core.IsMediaType default 'image/jpeg';
 }
 
@@ -73,7 +75,7 @@ entity Tasks : cuid, managed {
 
 entity Benefits : cuid, managed {
   kaizen        : Association to Kaizens;
-  @mandatory type : String(10) enum { Time; Cost; Quality; Safety; Energy; Space; OEE };
+  @mandatory @assert.range type : String(10) enum { Time; Cost; Quality; Safety; Energy; Space; OEE };
   baseline      : Decimal(15, 2);
   improved      : Decimal(15, 2);
   unit          : String(20);

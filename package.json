@@ -5,7 +5,8 @@
   "dependencies": {
     "@cap-js/hana": "^3.1.1",
     "@sap/cds": "^10",
-    "@sap/cds-mtxs": "^4"
+    "@sap/cds-mtxs": "^4",
+    "@sap/xssec": "^4.15.0"
   },
   "devDependencies": {
     "@cap-js/cds-test": "^1.0.2",
@@ -32,65 +33,70 @@
         "multitenancy": true
       },
       "auth": {
-        "kind": "mocked",
-        "users": {
-          "maria": {
-            "password": "",
-            "roles": [
-              "Operator"
-            ],
-            "tenant": "t1"
-          },
-          "sam": {
-            "password": "",
-            "roles": [
-              "Supervisor"
-            ],
-            "tenant": "t1"
-          },
-          "klaus": {
-            "password": "",
-            "roles": [
-              "CIManager"
-            ],
-            "tenant": "t1"
-          },
-          "petra": {
-            "password": "",
-            "roles": [
-              "PlantManager"
-            ],
-            "tenant": "t1"
-          },
-          "eva": {
-            "password": "",
-            "roles": [
-              "EHS"
-            ],
-            "tenant": "t1"
-          },
-          "admin": {
-            "password": "",
-            "roles": [
-              "Admin"
-            ],
-            "tenant": "t1"
-          },
-          "erin": {
-            "password": "",
-            "roles": [
-              "Operator",
-              "CIManager"
-            ],
-            "tenant": "t2"
-          },
-          "yves": {
-            "password": "",
-            "roles": [
-              "cds.Subscriber",
-              "internal-user"
-            ]
+        "[development]": {
+          "kind": "mocked",
+          "users": {
+            "maria": {
+              "password": "",
+              "roles": [
+                "Operator"
+              ],
+              "tenant": "t1"
+            },
+            "sam": {
+              "password": "",
+              "roles": [
+                "Supervisor"
+              ],
+              "tenant": "t1"
+            },
+            "klaus": {
+              "password": "",
+              "roles": [
+                "CIManager"
+              ],
+              "tenant": "t1"
+            },
+            "petra": {
+              "password": "",
+              "roles": [
+                "PlantManager"
+              ],
+              "tenant": "t1"
+            },
+            "eva": {
+              "password": "",
+              "roles": [
+                "EHS"
+              ],
+              "tenant": "t1"
+            },
+            "admin": {
+              "password": "",
+              "roles": [
+                "Admin"
+              ],
+              "tenant": "t1"
+            },
+            "erin": {
+              "password": "",
+              "roles": [
+                "Operator",
+                "CIManager"
+              ],
+              "tenant": "t2"
+            },
+            "yves": {
+              "password": "",
+              "roles": [
+                "cds.Subscriber",
+                "internal-user"
+              ]
+            }
           }
+        },
+        "[production]": {
+          "kind": "xsuaa"
         }
       }
     }

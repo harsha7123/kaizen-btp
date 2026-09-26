@@ -2,6 +2,15 @@ import cds from '@sap/cds'
 
 // Kaizen lifecycle: Submitted -> InReview -> Approved -> InProgress -> Verification -> Closed
 //                            \-> Rejected (from Submitted / InReview)
+// Shared by KaizenService (phone app, non-draft) and ManageService (Fiori, draft), which extends this class.
+export const MANAGERS = ['Supervisor', 'CIManager', 'PlantManager', 'EHS', 'Admin']
+const VERIFIERS = ['CIManager', 'PlantManager', 'Admin']
+const WORKFLOW_FIELDS = ['number', 'status_code', 'step', 'route_ID', 'nextRole', 'closedAt']
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024 // the phone sends ~0.3 MB; anything near this limit is not a phone photo
+
+export const isAny = (user, roles) => roles.some(r => user.is(r))
+
 export default class KaizenService extends cds.ApplicationService {
   init() {
     const { Kaizens, Photos, Tasks, Benefits, WorkflowRoutes, StatusHistory } = cds.entities('kaizen')
@@ -12,17 +21,28 @@ export default class KaizenService extends cds.ApplicationService {
       return k
     }
 
-    const move = async (req, k, to, patch = {}, note) => {
-      await UPDATE(Kaizens, k.ID).with({ status_code: to, ...patch })
-      await INSERT.into(StatusHistory).entries({ kaizen_ID: k.ID, fromStatus: k.status_code, toStatus: to, note })
-      return SELECT.one.from(Kaizens, k.ID)
-    }
-
     const approversOf = async k => {
       const route = k.route_ID && await SELECT.one.from(WorkflowRoutes, k.route_ID)
       const list = route ? route.approvers.split(',').map(s => s.trim()) : ['Supervisor']
       if (k.isSafety && !list.includes('EHS')) list.push('EHS') // safety kaizens always get an EHS step
       return list
+    }
+
+    // who acts next: drives the inbox and which buttons the Fiori app shows
+    const nextRoleOf = async (k, status) => ({
+      Submitted: () => approversOf(k).then(a => a[k.step]),
+      InReview: () => approversOf(k).then(a => a[k.step]),
+      Approved: () => 'CIManager', // start
+      InProgress: () => 'Owner', // do the work, then request verification
+      Verification: () => 'CIManager' // verify and close
+    })[status]?.() ?? null
+
+    const move = async (req, k, to, patch = {}, note) => {
+      patch.nextRole = await nextRoleOf({ ...k, ...patch }, to)
+      if (to === 'Closed') patch.closedAt = new Date().toISOString()
+      await UPDATE(Kaizens, k.ID).with({ status_code: to, ...patch })
+      await INSERT.into(StatusHistory).entries({ kaizen_ID: k.ID, fromStatus: k.status_code, toStatus: to, note })
+      return SELECT.one.from(req.subject)
     }
 
     // ---- create: number + routing ----
@@ -36,6 +56,7 @@ export default class KaizenService extends cds.ApplicationService {
       d.number = `KAI-${year}-${String((max ? +max.slice(-4) : 0) + 1).padStart(4, '0')}`
       d.status_code = 'Submitted'
       d.step = 0
+      d.closedAt = null
       if (d.equipment_ID && !d.plant_ID) {
         const eq = await SELECT.one.from('kaizen.Equipment', d.equipment_ID)
         if (!eq) return req.reject(400, `Unknown equipment ${d.equipment_ID}`, 'equipment_ID')
@@ -47,6 +68,7 @@ export default class KaizenService extends cds.ApplicationService {
         .orderBy`priority`
       const route = routes.find(r => r.maxBenefit == null || (d.estimatedBenefit ?? 0) <= +r.maxBenefit)
       d.route_ID = route?.ID
+      d.nextRole = await nextRoleOf(d, 'Submitted')
     })
 
     this.after('CREATE', 'Kaizens', (_, req) => INSERT.into(StatusHistory).entries({ kaizen_ID: req.data.ID, toStatus: 'Submitted' }))
@@ -80,7 +102,7 @@ export default class KaizenService extends cds.ApplicationService {
     this.on('requestVerification', 'Kaizens', async req => {
       const k = await load(req)
       if (k.status_code !== 'InProgress') return req.reject(409, 'Only kaizens in progress can go to verification')
-      if (k.owner !== req.user.id && !req.user.is('CIManager') && !req.user.is('PlantManager'))
+      if (k.owner !== req.user.id && !isAny(req.user, VERIFIERS))
         return req.reject(403, 'Only the owner or a CI manager can request verification')
       return move(req, k, 'Verification')
     })
@@ -103,28 +125,50 @@ export default class KaizenService extends cds.ApplicationService {
       return move(req, k, 'Closed', {}, req.data.note)
     })
 
-    // ---- children: no edits after closure; only CI managers verify benefits ----
+    // ---- children: no edits after closure; photos only on your own kaizens; only CI managers touch verified benefits ----
     this.before(['CREATE', 'UPDATE'], ['Photos', 'Tasks', 'Benefits'], async req => {
+      const entity = req.target.name.split('.').pop()
       if (req.event === 'CREATE' && req.data.ID && await SELECT.one.from(req.target, req.data.ID).columns('ID'))
-        return req.reject(409, `${req.target.name.split('.').pop()} ${req.data.ID} already exists`)
-      const kaizenID = req.data.kaizen_ID ?? (await SELECT.one.from(req.subject).columns('kaizen_ID'))?.kaizen_ID
+        return req.reject(409, `${entity} ${req.data.ID} already exists`)
+      const existing = req.event === 'UPDATE' ? await SELECT.one.from(req.subject) : null
+      const kaizenID = req.data.kaizen_ID ?? existing?.kaizen_ID
       if (!kaizenID) return req.reject(400, 'kaizen_ID is required', 'kaizen_ID')
-      const k = await SELECT.one.from(Kaizens, kaizenID).columns('status_code')
+      const k = await SELECT.one.from(Kaizens, kaizenID).columns('status_code', 'createdBy', 'owner')
       if (!k) return req.reject(400, `Unknown kaizen ${kaizenID}`, 'kaizen_ID')
       if (['Closed', 'Rejected'].includes(k.status_code)) return req.reject(409, `Kaizen is ${k.status_code}`)
-      if (req.target.name.endsWith('Benefits') && req.data.verified && !req.user.is('CIManager') && !req.user.is('PlantManager'))
-        return req.reject(403, 'Only a CI manager can verify a benefit', 'verified')
+
+      if (entity === 'Photos') {
+        if (req.event === 'CREATE' && !isAny(req.user, MANAGERS) && ![k.createdBy, k.owner].includes(req.user.id))
+          return req.reject(403, 'You can only add photos to your own kaizens')
+        if (req.data.mediaType && !IMAGE_TYPES.includes(req.data.mediaType))
+          return req.reject(415, `Photos must be ${IMAGE_TYPES.join(', ')}`, 'mediaType')
+        const size = +(req.http?.req?.headers['content-length'] ?? 0)
+        if (req.data.content && size > MAX_PHOTO_BYTES) return req.reject(413, 'Photo is larger than 5 MB')
+      }
+      if (entity === 'Benefits' && !isAny(req.user, VERIFIERS)) {
+        if (req.data.verified) return req.reject(403, 'Only a CI manager can verify a benefit', 'verified')
+        if (existing?.verified) return req.reject(403, 'Only a CI manager can change a verified benefit')
+      }
     })
 
-    // deep create/update could smuggle a verified benefit past the child handler above
-    this.before(['CREATE', 'UPDATE'], 'Kaizens', req => {
-      if (req.data.benefits?.some(b => b.verified) && !req.user.is('CIManager') && !req.user.is('PlantManager'))
-        return req.reject(403, 'Only a CI manager can verify a benefit')
+    // deep writes (Fiori draft activation, deep POST) must not verify, change or drop a verified benefit either
+    this.before(['CREATE', 'UPDATE'], 'Kaizens', async req => {
+      const incoming = req.data.benefits
+      if (!incoming || isAny(req.user, VERIFIERS)) return
+      const before = req.event === 'UPDATE' ? await SELECT.from(Benefits).where({ kaizen_ID: req.data.ID, verified: true }) : []
+      const sent = new Map(incoming.map(b => [b.ID, b]))
+      const same = (a, b) => a.verified === b.verified && ['type', 'unit'].every(f => a[f] === b[f]) &&
+        ['baseline', 'improved', 'annualSaving'].every(f => Number(a[f] ?? 0) === Number(b[f] ?? 0))
+      if (incoming.some(b => b.verified && !before.some(v => v.ID === b.ID)) || before.some(v => !sent.has(v.ID) || !same(v, { ...v, ...sent.get(v.ID) })))
+        return req.reject(403, 'Only a CI manager can verify, change or remove a verified benefit')
     })
 
     this.before('UPDATE', 'Kaizens', async req => {
+      for (const f of WORKFLOW_FIELDS) delete req.data[f] // workflow fields only move through actions (a stale draft must not roll them back)
       const k = await SELECT.one.from(req.subject).columns('status_code')
       if (k && ['Closed', 'Rejected'].includes(k.status_code)) return req.reject(409, `Kaizen is ${k.status_code}`)
+      if (k && !isAny(req.user, MANAGERS) && k.status_code !== 'Submitted')
+        return req.reject(409, 'Operators can only edit a kaizen until the first approval')
     })
 
     return super.init()

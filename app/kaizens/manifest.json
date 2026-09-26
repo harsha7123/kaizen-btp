@@ -1,0 +1,76 @@
+{
+  "_version": "1.65.0",
+  "sap.app": {
+    "id": "kaizen.manage",
+    "type": "application",
+    "title": "Manage Kaizens",
+    "applicationVersion": { "version": "1.0.0" },
+    "dataSources": {
+      "main": { "uri": "/odata/v4/manage/", "type": "OData", "settings": { "odataVersion": "4.0" } }
+    }
+  },
+  "sap.ui": { "technology": "UI5", "deviceTypes": { "desktop": true, "tablet": true, "phone": true } },
+  "sap.ui5": {
+    "flexEnabled": false,
+    "dependencies": { "minUI5Version": "1.136.0", "libs": { "sap.m": {}, "sap.ui.core": {}, "sap.fe.templates": {} } },
+    "models": {
+      "": { "dataSource": "main", "preload": true, "settings": { "operationMode": "Server", "autoExpandSelect": true, "earlyRequests": true } }
+    },
+    "routing": {
+      "routes": [
+        { "pattern": ":?query:", "name": "KaizensList", "target": "KaizensList" },
+        { "pattern": "Kaizens({key}):?query:", "name": "KaizensObjectPage", "target": "KaizensObjectPage" },
+        { "pattern": "Kaizens({key})/tasks({key2}):?query:", "name": "TasksObjectPage", "target": "TasksObjectPage" },
+        { "pattern": "Kaizens({key})/benefits({key2}):?query:", "name": "BenefitsObjectPage", "target": "BenefitsObjectPage" }
+      ],
+      "targets": {
+        "KaizensList": {
+          "type": "Component", "id": "KaizensList", "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "contextPath": "/Kaizens",
+              "variantManagement": "Page",
+              "initialLoad": "Enabled",
+              "views": {
+                "paths": [
+                  { "key": "inbox", "annotationPath": "com.sap.vocabularies.UI.v1.SelectionPresentationVariant#inbox" },
+                  { "key": "all", "annotationPath": "com.sap.vocabularies.UI.v1.SelectionPresentationVariant#all" }
+                ],
+                "showCounts": true
+              },
+              "navigation": {
+                "Kaizens": { "detail": { "route": "KaizensObjectPage" } }
+              }
+            }
+          }
+        },
+        "KaizensObjectPage": {
+          "type": "Component", "id": "KaizensObjectPage", "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "contextPath": "/Kaizens",
+              "editableHeaderContent": false,
+              "navigation": {
+                "tasks": { "detail": { "route": "TasksObjectPage" } },
+                "benefits": { "detail": { "route": "BenefitsObjectPage" } }
+              },
+              "controlConfiguration": {
+                "tasks/@com.sap.vocabularies.UI.v1.LineItem": { "tableSettings": { "type": "ResponsiveTable", "creationMode": { "name": "InlineCreationRows" } } },
+                "benefits/@com.sap.vocabularies.UI.v1.LineItem": { "tableSettings": { "type": "ResponsiveTable", "creationMode": { "name": "InlineCreationRows" } } }
+              }
+            }
+          }
+        },
+        "TasksObjectPage": {
+          "type": "Component", "id": "TasksObjectPage", "name": "sap.fe.templates.ObjectPage",
+          "options": { "settings": { "contextPath": "/Kaizens/tasks" } }
+        },
+        "BenefitsObjectPage": {
+          "type": "Component", "id": "BenefitsObjectPage", "name": "sap.fe.templates.ObjectPage",
+          "options": { "settings": { "contextPath": "/Kaizens/benefits" } }
+        }
+      }
+    }
+  },
+  "sap.fiori": { "registrationIds": [], "archeType": "transactional" }
+}

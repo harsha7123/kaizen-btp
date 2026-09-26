@@ -6,7 +6,7 @@ service KaizenService {
 
   @restrict: [
     { grant: 'READ', to: 'authenticated-user' },
-    { grant: 'CREATE', to: ['Operator', 'Supervisor', 'CIManager', 'PlantManager'] },
+    { grant: 'CREATE', to: ['Operator', 'Supervisor', 'CIManager', 'PlantManager', 'EHS'] },
     { grant: 'UPDATE', to: 'Operator', where: 'createdBy = $user' },
     { grant: 'UPDATE', to: ['Supervisor', 'CIManager', 'PlantManager'] },
     { grant: ['approve', 'reject'], to: ['Supervisor', 'CIManager', 'PlantManager', 'EHS'] },
@@ -23,18 +23,25 @@ service KaizenService {
     action close(note : String) returns Kaizens;
   };
 
+  // photos: anyone adds to kaizens they may touch (checked in the handler); only the uploader replaces the bytes
   @restrict: [
-    { grant: ['READ', 'CREATE', 'UPDATE'], to: 'authenticated-user' },
+    { grant: ['READ', 'CREATE'], to: 'authenticated-user' },
+    { grant: 'UPDATE', to: 'authenticated-user', where: 'createdBy = $user' },
     { grant: '*', to: ['CIManager', 'PlantManager', 'Admin'] }
   ]
   entity Photos        as projection on db.Photos;
+  // tasks: managers plan them; the task owner may tick them off
   @restrict: [
-    { grant: ['READ', 'CREATE', 'UPDATE'], to: 'authenticated-user' },
+    { grant: 'READ', to: 'authenticated-user' },
+    { grant: 'UPDATE', to: 'authenticated-user', where: 'owner = $user' },
+    { grant: ['CREATE', 'UPDATE'], to: ['Supervisor', 'EHS'] },
     { grant: '*', to: ['CIManager', 'PlantManager', 'Admin'] }
   ]
   entity Tasks         as projection on db.Tasks;
+  // benefits: managers record them; only CI / plant managers verify (checked in the handler)
   @restrict: [
-    { grant: ['READ', 'CREATE', 'UPDATE'], to: 'authenticated-user' },
+    { grant: 'READ', to: 'authenticated-user' },
+    { grant: ['CREATE', 'UPDATE'], to: ['Supervisor', 'EHS'] },
     { grant: '*', to: ['CIManager', 'PlantManager', 'Admin'] }
   ]
   entity Benefits      as projection on db.Benefits;
