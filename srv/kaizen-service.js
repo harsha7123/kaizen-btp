@@ -2,13 +2,14 @@ import cds from '@sap/cds'
 import { draftFromPhoto, spend } from './ai/index.js'
 import { findSimilar } from './ai/similar.js'
 import { lookupEquipment, createNotification } from './s4.js'
+import { scores } from './score.js'
 
 // Kaizen lifecycle: Submitted -> InReview -> Approved -> InProgress -> Verification -> Closed
 //                            \-> Rejected (from Submitted / InReview)
 // Shared by KaizenService (phone app, non-draft) and ManageService (Fiori, draft), which extends this class.
 export const MANAGERS = ['Supervisor', 'CIManager', 'PlantManager', 'EHS', 'Admin']
 const VERIFIERS = ['CIManager', 'PlantManager', 'Admin']
-const WORKFLOW_FIELDS = ['number', 'status_code', 'step', 'route_ID', 'nextRole', 'closedAt', 'fiveWhy', 'a3', 'similarTo_ID', 'similarity', 'pmNotification']
+const WORKFLOW_FIELDS = ['number', 'status_code', 'step', 'route_ID', 'nextRole', 'closedAt', 'fiveWhy', 'a3', 'similarTo_ID', 'similarity', 'pmNotification', 'origin_ID']
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024 // the phone sends ~0.3 MB; anything near this limit is not a phone photo
 
@@ -201,6 +202,16 @@ export default class KaizenService extends cds.ApplicationService {
       catch (e) { cds.log('ai').warn(e.message); return req.reject(502, 'The AI assistant is not available right now') }
     })
     this.on('similar', req => findSimilar(req.data))
+
+    // gamification for the phone: my points, badges, rank in my plant and the plant's top 3
+    this.on('myScore', async req => {
+      const all = await scores(), me = all.find(s => s.user === req.user.id)
+      const peers = all.filter(s => s.plant && s.plant === me?.plant)
+      return {
+        points: me?.points ?? 0, rank: me ? peers.indexOf(me) + 1 : null, outOf: peers.length, plantName: me?.plantName ?? null,
+        badges: me?.badges ?? [], top: peers.slice(0, 3).map(s => ({ name: s.name, points: s.points }))
+      }
+    })
 
     // phone scans a machine that is not cached yet: look it up in S/4 once, then it is local (and offline) for everyone
     this.on('READ', 'Equipment', async (req, next) => {

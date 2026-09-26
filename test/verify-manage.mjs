@@ -161,6 +161,26 @@ try {
   check((await hh.textContent()).includes('14,200.00'), `KPI row does not show the verified saving: ${await hh.textContent()}`)
   step('petra sees 14,200 EUR verified for Hamburg / Autonomous Maintenance')
 
+  // 7. gamification on the phone: reported 10 + approved 10 + closed 30 + 14 x 1,000 EUR verified = 64 points
+  await maria.goto(`${BASE}/capture/`)
+  await maria.locator('#score-points', { hasText: '⭐ 64 points' }).waitFor({ timeout: 15000 })
+  check((await maria.textContent('#score-badges')).includes('10k saver'), 'badge missing on the phone')
+  step('maria sees 64 points and her badges on the phone')
+
+  // 8. horizontal deployment: Klaus copies the proven kaizen to a Munich machine
+  await klaus.goto(`${BASE}/kaizens/index.html#/Kaizens(ID=${id},IsActiveEntity=true)`)
+  await klaus.getByRole('button', { name: 'Deploy to another machine', exact: true }).waitFor({ timeout: 20000 })
+  await run(klaus, 'Deploy to another machine', { 'Target machine': 'P-2042' })
+  await klaus.getByText(/Created KAI-\d{4}-\d{4} for machine P-2042/).first().waitFor({ state: 'attached', timeout: 15000 })
+  step('klaus deployed the closed kaizen to machine P-2042 (new kaizen, normal approval)')
+
+  // 9. leaderboard: Maria on top with the Teacher badge for the deployment
+  await petra.goto(`${BASE}/leaderboard/index.html`)
+  const top = petra.getByRole('row').filter({ hasText: 'maria' }).first()
+  await top.waitFor({ timeout: 30000 })
+  check((await top.textContent()).includes('Teacher'), `leaderboard row lacks the Teacher badge: ${await top.textContent()}`)
+  step('petra sees the leaderboard: maria first, with the Teacher badge')
+
   // operators cannot open the manager app's data
   const denied = await (await maria.request.get(`${BASE}/odata/v4/manage/Kaizens`)).status()
   check(denied === 403, `operator got ${denied} from the manager service`)

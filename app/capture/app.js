@@ -83,7 +83,7 @@ async function sync () {
     }
   } finally {
     state.syncing = false
-    if (synced) toast(`${synced} kaizen${synced > 1 ? 's' : ''} sent`)
+    if (synced) { toast(`${synced} kaizen${synced > 1 ? 's' : ''} sent`); loadScore() }
     render()
   }
 }
@@ -368,6 +368,18 @@ async function render () {
   net.textContent = (navigator.onLine ? 'Online' : 'Offline') + (waiting ? ` · ${waiting} waiting` : '')
 }
 
+// ---- gamification: my points, badges and rank (cached, so it shows offline too) ----
+async function loadScore () {
+  let s = JSON.parse(localStorage.getItem('kaizen-score') || 'null')
+  if (navigator.onLine) try { s = await send('GET', '/myScore()'); localStorage.setItem('kaizen-score', JSON.stringify(s)) } catch { /* keep cached */ }
+  if (!s || !s.points) return
+  $('score-section').hidden = false
+  $('score-points').textContent = `⭐ ${s.points} points`
+  $('score-rank').textContent = s.rank ? `#${s.rank} of ${s.outOf} in ${s.plantName}` : ''
+  $('score-badges').replaceChildren(...s.badges.map(b => Object.assign(document.createElement('span'), { textContent: b })))
+  $('score-top').replaceChildren(...s.top.map(t => Object.assign(document.createElement('li'), { textContent: `${t.name} · ${t.points}` })))
+}
+
 let toastTimer
 function toast (msg) {
   const t = $('toast')
@@ -401,4 +413,5 @@ const eq = new URLSearchParams(location.search).get('eq') // QR label link opene
 setupVoice()
 loadMasterData().then(() => { if (eq) setEquipment(eq) })
 render().then(sync)
+loadScore()
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js')

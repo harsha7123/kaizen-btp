@@ -31,6 +31,10 @@ entity Statuses : CodeList {
   key code : String(20);
 }
 
+entity BenefitTypes : CodeList {
+  key code : String(10); // Time, Cost, Quality, Safety, Energy, Space, OEE
+}
+
 // ---- Kaizen core ----
 entity Kaizens : cuid, managed {
   number      : String(20) @readonly; // KAI-2026-0001, per tenant
@@ -54,6 +58,9 @@ entity Kaizens : cuid, managed {
   similarity  : Decimal(3, 2) @readonly;
   // S/4 PM write-back (Phase 5): maintenance notification created when the kaizen starts
   pmNotification : String(12) @readonly;
+  // horizontal deployment (Phase 7): this kaizen was copied from a closed one
+  origin      : Association to Kaizens @readonly;
+  deployments : Association to many Kaizens on deployments.origin = $self;
   route       : Association to WorkflowRoutes @readonly;
   equipment   : Association to Equipment;
   plant       : Association to Plants; // derived from equipment when scanned

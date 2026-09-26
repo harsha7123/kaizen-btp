@@ -2,6 +2,7 @@ import cds from '@sap/cds'
 import KaizenService, { isAny } from './kaizen-service.js'
 import { fiveWhy, a3, spend } from './ai/index.js'
 import { syncPlant } from './s4.js'
+import { scores } from './score.js'
 
 const DECIDERS = ['Supervisor', 'CIManager', 'PlantManager', 'EHS']
 const CLOSERS = ['CIManager', 'PlantManager', 'Admin']
@@ -31,7 +32,7 @@ export default class ManageService extends KaizenService {
     const { Kaizens, Benefits, Plants, Pillars } = cds.entities('kaizen')
 
     // button visibility: computed from the same facts the action handlers check
-    const CAN = ['canApprove', 'canStart', 'canRequestVerification', 'canClose', 'canAnalyze']
+    const CAN = ['canApprove', 'canStart', 'canRequestVerification', 'canClose', 'canAnalyze', 'canDeploy']
     this.before('READ', 'Kaizens', req => {
       const cols = req.query.SELECT.columns
       if (cols && cols.some(c => CAN.includes(c.ref?.[0])))
@@ -46,6 +47,7 @@ export default class ManageService extends KaizenService {
         k.canRequestVerification = k.status_code === 'InProgress' && (k.owner === u.id || isAny(u, CLOSERS))
         k.canClose = k.status_code === 'Verification' && isAny(u, CLOSERS)
         k.canAnalyze = !['Closed', 'Rejected'].includes(k.status_code)
+        k.canDeploy = k.status_code === 'Closed' && isAny(u, CLOSERS)
       }
     })
 
@@ -109,6 +111,35 @@ export default class ManageService extends KaizenService {
       const k = await facts(ID)
       const report = await ask(req, () => a3({ ...k, createdAt: new Date(k.createdAt).toISOString() }))
       await UPDATE(Kaizens, ID).with({ a3: JSON.stringify(report) })
+      return SELECT.one.from(req.subject)
+    })
+
+    // ---- gamification and horizontal deployment ----
+    this.on('READ', 'Leaderboard', async () => {
+      const rows = (await scores()).map((s, i) => ({ // only the declared fields go out
+        user: s.user, rank: i + 1, name: s.name, plantName: s.plantName, points: s.points, submitted: s.submitted,
+        closed: s.closed, owned: s.owned, verifiedSaving: s.verifiedSaving, badges: s.badges.join('  ')
+      }))
+      rows.$count = rows.length
+      return rows
+    })
+
+    this.on('deployTo', 'Kaizens', async req => {
+      const src = await SELECT.one.from(req.subject)
+      const target = req.data.equipment_ID?.trim().toUpperCase()
+      if (src.status_code !== 'Closed') return req.reject(409, 'Only closed (proven) kaizens can be deployed to other machines')
+      if (!target || target === src.equipment_ID) return req.reject(400, 'Choose a different machine', 'equipment_ID')
+      // created through the phone-facing service: same numbering, routing, S/4 lookup and permission checks as any kaizen
+      const ks = cds.services.KaizenService, ID = cds.utils.uuid()
+      await ks.run(INSERT.into(ks.entities.Kaizens).entries({
+        ID, equipment_ID: target, pillar_code: src.pillar_code, isSafety: src.isSafety, estimatedBenefit: src.estimatedBenefit,
+        title: src.title, rootCause: src.rootCause, countermeasure: src.countermeasure,
+        problem: `Horizontal deployment of ${src.number} (${src.equipment_ID}): ${src.problem ?? src.title}`.slice(0, 2000)
+      }))
+      const copy = await SELECT.one.from(Kaizens, ID).columns('number', 'similarTo_ID')
+      // the copy is not a duplicate of its origin, it is a deployment of it
+      await UPDATE(Kaizens, ID).with({ origin_ID: src.ID, ...(copy.similarTo_ID === src.ID && { similarTo_ID: null, similarity: null }) })
+      req.info(`Created ${copy.number} for machine ${target}`)
       return SELECT.one.from(req.subject)
     })
 

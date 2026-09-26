@@ -70,6 +70,12 @@
     dialog .bar button { flex: 1; }
     .hint { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
     #ai-draft { margin-bottom: 12px; border-style: dashed; }
+    .score-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+    .score-head b { font-size: 22px; }
+    .score-head span { color: var(--muted); font-size: 14px; text-align: right; }
+    .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .badges span { font-size: 13px; padding: 4px 10px; border-radius: 99px; background: var(--bg); border: 1px solid var(--line); }
+    .top { margin: 10px 0 0; padding-left: 22px; color: var(--muted); font-size: 14px; }
     .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--line); }
     .tabs button { border: 0; }
     .tabs button[aria-selected=true] { background: var(--primary); color: var(--on-primary); }
@@ -88,6 +94,11 @@
   </header>
 
   <main>
+    <section id="score-section" class="score" hidden>
+      <div class="score-head"><b id="score-points"></b><span id="score-rank"></span></div>
+      <div id="score-badges" class="badges"></div>
+      <ol id="score-top" class="top"></ol>
+    </section>
     <section id="mine-section" hidden>
       <h2>My kaizens on this phone</h2>
       <div id="mine" class="list"></div>

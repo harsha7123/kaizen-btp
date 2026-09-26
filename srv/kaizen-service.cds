@@ -56,6 +56,11 @@ service KaizenService {
   action draftFromPhoto(image : LargeString, equipment_ID : String(20), hint : String(120)) returns DraftSuggestion;
   function similar(title : String(120), problem : String(2000), equipment_ID : String(20)) returns many SimilarKaizen;
 
+  // ---- gamification: my points, badges and rank in my plant ----
+  type ScoreEntry { name : String(80); points : Integer; }
+  type MyScore { points : Integer; rank : Integer; outOf : Integer; plantName : String(80); badges : many String(40); top : many ScoreEntry; }
+  function myScore() returns MyScore;
+
   @readonly entity Plants      as projection on db.Plants;
   @readonly entity WorkCenters as projection on db.WorkCenters;
   @readonly entity Equipment   as projection on db.Equipment;

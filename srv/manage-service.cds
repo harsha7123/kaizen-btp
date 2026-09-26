@@ -16,6 +16,7 @@ service ManageService {
     { grant: 'requestVerification', to: 'authenticated-user' },
     { grant: 'close', to: ['CIManager', 'PlantManager'] },
     { grant: ['fiveWhy', 'generateA3'], to: ['Supervisor', 'CIManager', 'PlantManager', 'EHS'] },
+    { grant: 'deployTo', to: ['CIManager', 'PlantManager'] },
     { grant: '*', to: 'Admin' }
   ]
   entity Kaizens as projection on db.Kaizens {
@@ -30,6 +31,7 @@ service ManageService {
     virtual canRequestVerification : Boolean,
     virtual canClose   : Boolean,
     virtual canAnalyze : Boolean,
+    virtual canDeploy  : Boolean,
     // printable A3 report page (app/a3)
     '/a3/index.html?ID=' || ID as a3Url : String(80)
   } excluding { photos, history } actions {
@@ -41,6 +43,8 @@ service ManageService {
     // AI assist: fills fiveWhy (and rootCause if empty) / the A3 report
     action fiveWhy() returns Kaizens;
     action generateA3() returns Kaizens;
+    // horizontal deployment: copy a closed kaizen to another machine (new kaizen, normal approval)
+    action deployTo(equipment_ID : String(20) @mandatory @title: 'Target machine') returns Kaizens;
   };
 
   // S/4HANA: pull a plant's machines into the local cache (then scannable offline)
@@ -51,7 +55,11 @@ service ManageService {
   entity Benefits as projection on db.Benefits;
 
   @readonly entity Photos        as projection on db.Photos { *, '/odata/v4/manage/Photos(' || ID || ')/content' as url : String(120) };
-  @readonly entity StatusHistory as projection on db.StatusHistory;
+  @readonly entity StatusHistory as projection on db.StatusHistory {
+    *,
+    fromState : Association to Statuses on fromState.code = fromStatus,
+    toState   : Association to Statuses on toState.code = toStatus
+  };
 
 
   // KPIs by plant and pillar, computed in the handler (count, open/closed, cycle time, verified savings)
@@ -73,4 +81,20 @@ service ManageService {
   @readonly entity Equipment   as projection on db.Equipment;
   @readonly entity Pillars     as projection on db.Pillars;
   @readonly entity Statuses    as projection on db.Statuses;
+  @readonly entity BenefitTypes as projection on db.BenefitTypes;
+
+  // gamification: points, badges and rank per person (computed in the handler)
+  @readonly @cds.persistence.skip
+  entity Leaderboard {
+    key user       : String(255);
+        rank       : Integer;
+        name       : String(80);
+        plantName  : String(80);
+        points     : Integer;
+        submitted  : Integer;
+        closed     : Integer;
+        owned      : Integer;
+        verifiedSaving : Decimal(15, 2);
+        badges     : String(200);
+  }
 }

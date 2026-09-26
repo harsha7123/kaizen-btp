@@ -129,3 +129,23 @@ Scope: multi-tenant MTA (app router with tenant host pattern, CAP srv serving th
 - [ ] G3: deployed to the trial: two subaccounts subscribed on their own URLs, data isolated, demo script runs
   CHECK: DEPLOY.md steps 0-3, then the demo script on customer 1 and an empty customer 2
   EVIDENCE: pending: needs make on the PC (winget install ezwinports.make) and the go-ahead to run cf deploy
+
+# Gates: phase 7, gamification and polish
+
+OWNS: srv/score.js, test/gamification.test.js, app/leaderboard/**, Phase 7 parts of srv/*, app/annotations.cds, app/capture/*, db/schema.cds
+
+Scope: points and badges computed from the data (never stored: cannot drift or be edited); "Your score" card on the phone (rank in the plant, top 3, works offline from cache); Leaderboard Fiori app (managers); horizontal deployment of closed kaizens to another machine (new kaizen through the normal flow, linked to its origin, the author earns +15 and the Teacher badge, the copier earns nothing); history shows status names; benefit type is a dropdown (BenefitTypes code list).
+Security: leaderboard only for managers and only declared fields; deployment only by CI/plant managers and only from closed kaizens; clients cannot set origin (points) or other workflow fields.
+
+- [x] G1: points, badges, rank, leaderboard access, deployment rules, history texts
+  CHECK: node --test --test-reporter=tap test/gamification.test.js
+  EXPECT: /# pass [1-9]\d*\r?\n# fail 0/
+  EVIDENCE: 2026-09-26, Node 24.21.0: # pass 5 / # fail 0. Negative controls: deploying open kaizens allowed -> deployment test fails; safety bonus dropped -> points test fails.
+
+- [x] G2: the Maria scenario still clicks through end to end, now ending with points on the phone, a deployment to another machine and the leaderboard
+  CHECK: node test/verify-manage.mjs
+  EXPECT: maria scenario clickable
+  EVIDENCE: 2026-09-26, Edge, UI5 1.136.22: maria scenario clickable (exit 0): 64 points on the phone, KAI copied to P-2042, leaderboard with Teacher badge.
+
+- [x] G3: deployment, leaderboard and benefit types work on HANA Cloud
+  EVIDENCE: 2026-09-26, kaizen-hana: deploy "Make succeeded (12 files)"; copy created for P-3042 (plant PL_WAW, Submitted); leaderboard top row; 7 benefit types.

@@ -88,7 +88,8 @@ annotate s.Kaizens with @(
     { $Type: 'UI.DataFieldForAction', Action: 'ManageService.requestVerification', Label: 'Request verification' },
     { $Type: 'UI.DataFieldForAction', Action: 'ManageService.close', Label: 'Close kaizen' },
     { $Type: 'UI.DataFieldForAction', Action: 'ManageService.fiveWhy', Label: '✨ 5-Why analysis' },
-    { $Type: 'UI.DataFieldForAction', Action: 'ManageService.generateA3', Label: '✨ Generate A3' }
+    { $Type: 'UI.DataFieldForAction', Action: 'ManageService.generateA3', Label: '✨ Generate A3' },
+    { $Type: 'UI.DataFieldForAction', Action: 'ManageService.deployTo', Label: 'Deploy to another machine' }
   ],
   UI.HeaderFacets: [{ $Type: 'UI.ReferenceFacet', Target: '@UI.FieldGroup#Workflow' }],
   UI.FieldGroup #Workflow: { Data: [{ Value: status_code, ![@UI.Importance]: #High }, { Value: nextRole, ![@UI.Importance]: #High }, { Value: owner }, { Value: dueDate }] },
@@ -108,6 +109,8 @@ annotate s.Kaizens with @(
     { $Type: 'UI.ReferenceFacet', ID: 'photos', Label: 'Photos', Target: 'photos/@UI.LineItem' },
     { $Type: 'UI.ReferenceFacet', ID: 'tasks', Label: 'Tasks', Target: 'tasks/@UI.LineItem' },
     { $Type: 'UI.ReferenceFacet', ID: 'benefits', Label: 'Benefits', Target: 'benefits/@UI.LineItem' },
+    { $Type: 'UI.ReferenceFacet', ID: 'deployment', Label: 'Horizontal deployment', Target: '@UI.FieldGroup#Deployment' },
+    { $Type: 'UI.ReferenceFacet', ID: 'deployments', Label: 'Deployed to', Target: 'deployments/@UI.LineItem#Deployments' },
     { $Type: 'UI.ReferenceFacet', ID: 'history', Label: 'History', Target: 'history/@UI.LineItem' }
   ]
 );
@@ -165,4 +168,43 @@ annotate s.Tasks with @(
 annotate s.Benefits with @(
   UI.FieldGroup #Main: { Data: [{ Value: type }, { Value: baseline }, { Value: improved }, { Value: unit }, { Value: annualSaving }, { Value: verified }] },
   UI.Facets: [{ $Type: 'UI.ReferenceFacet', Label: 'Benefit', Target: '@UI.FieldGroup#Main' }]
+);
+
+// ---- Phase 7: horizontal deployment, history texts, benefit type dropdown, leaderboard ----
+annotate db.Kaizens with { origin @title: 'Deployed from' @Common.Text: origin.number @Common.TextArrangement: #TextOnly; }
+annotate s.Kaizens with @(
+  UI.LineItem #Deployments: [{ Value: number }, { Value: title }, { Value: equipment_ID }, { Value: status_code }, { Value: createdAt }],
+  UI.FieldGroup #Deployment: { Data: [{ Value: origin_ID }] }
+);
+annotate s.Kaizens with actions {
+  deployTo @Core.OperationAvailable: { $edmJson: { $Path: 'in/canDeploy' } }
+           @Common.SideEffects: { TargetEntities: ['in/deployments'] }
+    (equipment_ID @Common.ValueList: { CollectionPath: 'Equipment', Parameters: [
+      { $Type: 'Common.ValueListParameterInOut', LocalDataProperty: equipment_ID, ValueListProperty: 'ID' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'plant_ID' }
+    ] });
+}
+
+annotate s.StatusHistory with {
+  fromStatus @Common.Text: fromState.name @Common.TextArrangement: #TextOnly;
+  toStatus   @Common.Text: toState.name   @Common.TextArrangement: #TextOnly;
+}
+
+annotate s.Benefits with {
+  type @Common.ValueListWithFixedValues @Common.ValueList: { CollectionPath: 'BenefitTypes', Parameters: [
+    { $Type: 'Common.ValueListParameterInOut', LocalDataProperty: type, ValueListProperty: 'code' },
+    { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+  ] };
+}
+
+annotate s.Leaderboard with @(
+  UI.HeaderInfo: { TypeName: 'Person', TypeNamePlural: 'Kaizen leaderboard' },
+  UI.SelectionFields: [],
+  UI.LineItem: [
+    { Value: rank, Label: '#', ![@UI.Importance]: #High }, { Value: name, Label: 'Name', ![@UI.Importance]: #High },
+    { Value: plantName, Label: 'Plant', ![@UI.Importance]: #High }, { Value: points, Label: 'Points', ![@UI.Importance]: #High },
+    { Value: submitted, Label: 'Reported' }, { Value: closed, Label: 'Closed' }, { Value: owned, Label: 'Implemented' },
+    { Value: verifiedSaving, Label: 'Verified saving (EUR/yr)' }, { Value: badges, Label: 'Badges', ![@UI.Importance]: #High }
+  ]
 );
