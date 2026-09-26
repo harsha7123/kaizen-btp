@@ -1,6 +1,7 @@
-// App shell: served from cache instantly, refreshed in the background (stale-while-revalidate).
+// Page: network first (so an expired BTP login redirects to the sign-in page), cached copy when offline.
+// Other shell files: served from cache instantly, refreshed in the background (stale-while-revalidate).
 // API calls are never cached here: offline data lives in the app's IndexedDB queue and localStorage.
-const CACHE = 'kaizen-capture-v4'
+const CACHE = 'kaizen-capture-v5'
 const SHELL = ['./', 'index.html', 'app.js', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'vendor/jsQR.js']
 
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())))
@@ -9,12 +10,17 @@ self.addEventListener('activate', e => e.waitUntil(
 ))
 
 self.addEventListener('fetch', e => {
-  const url = new URL(e.request.url)
-  if (e.request.method !== 'GET' || url.origin !== location.origin || !url.pathname.startsWith(new URL('./', location).pathname)) return
-  const key = e.request.mode === 'navigate' ? new URL('./', location).href : e.request // ?eq=P-1042 links open the cached shell
+  const url = new URL(e.request.url), scope = new URL('./', location)
+  if (e.request.method !== 'GET' || url.origin !== location.origin || !url.pathname.startsWith(scope.pathname)) return
+  if (e.request.mode === 'navigate') { // ?eq=P-1042 label links open the same page
+    e.respondWith(caches.open(CACHE).then(cache => fetch(e.request)
+      .then(res => { if (res.ok && res.type === 'basic') cache.put(scope.href, res.clone()); return res })
+      .catch(() => cache.match(scope.href))))
+    return
+  }
   e.respondWith(caches.open(CACHE).then(async cache => {
-    const cached = await cache.match(key, { ignoreSearch: true })
-    const fresh = fetch(e.request).then(res => { if (res.ok) cache.put(key, res.clone()); return res })
+    const cached = await cache.match(e.request, { ignoreSearch: true })
+    const fresh = fetch(e.request).then(res => { if (res.ok) cache.put(e.request, res.clone()); return res })
     if (cached) { e.waitUntil(fresh.catch(() => {})); return cached }
     return fresh
   }))

@@ -1,0 +1,86 @@
+{
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.Operator",
+      "description": "Operator"
+    },
+    {
+      "name": "$XSAPPNAME.Supervisor",
+      "description": "Supervisor"
+    },
+    {
+      "name": "$XSAPPNAME.CIManager",
+      "description": "CIManager"
+    },
+    {
+      "name": "$XSAPPNAME.PlantManager",
+      "description": "PlantManager"
+    },
+    {
+      "name": "$XSAPPNAME.EHS",
+      "description": "EHS"
+    },
+    {
+      "name": "$XSAPPNAME.Admin",
+      "description": "Admin"
+    },
+    {
+      "name": "$XSAPPNAME.mtcallback",
+      "description": "Subscription via SaaS Registry",
+      "grant-as-authority-to-apps": [
+        "$XSAPPNAME(application,sap-provisioning,tenant-onboarding)"
+      ]
+    }
+  ],
+  "attributes": [],
+  "role-templates": [
+    {
+      "name": "Operator",
+      "description": "generated",
+      "scope-references": [
+        "$XSAPPNAME.Operator"
+      ],
+      "attribute-references": []
+    },
+    {
+      "name": "Supervisor",
+      "description": "generated",
+      "scope-references": [
+        "$XSAPPNAME.Supervisor"
+      ],
+      "attribute-references": []
+    },
+    {
+      "name": "CIManager",
+      "description": "generated",
+      "scope-references": [
+        "$XSAPPNAME.CIManager"
+      ],
+      "attribute-references": []
+    },
+    {
+      "name": "PlantManager",
+      "description": "generated",
+      "scope-references": [
+        "$XSAPPNAME.PlantManager"
+      ],
+      "attribute-references": []
+    },
+    {
+      "name": "EHS",
+      "description": "generated",
+      "scope-references": [
+        "$XSAPPNAME.EHS"
+      ],
+      "attribute-references": []
+    },
+    {
+      "name": "Admin",
+      "description": "generated",
+      "scope-references": [
+        "$XSAPPNAME.Admin"
+      ],
+      "attribute-references": []
+    }
+  ]
+}

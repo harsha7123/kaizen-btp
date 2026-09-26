@@ -1,0 +1,171 @@
+_schema-version: 3.3.0
+ID: kaizen-btp
+version: 1.0.0
+description: "Kaizen: multi-tenant TPM / kaizen capture, approval and reporting on SAP BTP"
+parameters:
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npm ci
+        - npx cds build --production
+        # the web apps (phone app, Fiori pages, A3) are served by the CAP server from ./app
+        - node -e "require('fs').cpSync('app','gen/srv/app',{recursive:true,filter:f=>!f.endsWith('.cds')})"
+modules:
+  - name: kaizen-btp-srv
+    type: nodejs
+    path: gen/srv
+    parameters:
+      instances: 1
+      buildpack: nodejs_buildpack
+      memory: 512M
+      disk-quota: 1024M
+    build-parameters:
+      builder: npm-ci
+    provides:
+      - name: srv-api # required by consumers of CAP services (e.g. approuter)
+        properties:
+          srv-url: ${default-url}
+    requires:
+      - name: kaizen-btp-auth
+      - name: kaizen-btp-db
+      - name: kaizen-btp-destination
+
+  - name: kaizen-btp-mtx
+    type: nodejs
+    path: gen/mtx/sidecar
+    requires:
+      - name: kaizen-btp-auth
+      - name: kaizen-btp-db
+      - name: kaizen-btp-registry
+      - name: app-api
+        properties:
+          SUBSCRIPTION_URL: ~{app-protocol}://\${tenant_subdomain}-~{app-uri}
+    build-parameters:
+      builder: npm-ci
+    parameters:
+      instances: 1
+      memory: 256M
+      disk-quota: 512M
+    hooks:
+      - name: upgrade-all
+        type: task
+        phases:
+          - blue-green.application.before-start.idle
+          - deploy.application.before-start
+        parameters:
+          name: upgrade
+          memory: 512M # increase as required
+          disk-quota: 768M # increase as required
+          command: cds-mtx upgrade '*'
+    provides:
+      - name: mtx-api
+        properties:
+          mtx-url: ${default-url}
+  - name: kaizen-btp
+    type: approuter.nodejs
+    path: .deploy/app-router
+    parameters:
+      keep-existing-routes: true
+      disk-quota: 256M
+      memory: 256M
+    properties:
+      TENANT_HOST_PATTERN: "^(.*)-${default-uri}"
+      # security headers on every response (X-Frame-Options SAMEORIGIN is the app router default)
+      httpHeaders: >-
+        [{"X-Content-Type-Options": "nosniff"}, {"Referrer-Policy": "same-origin"},
+         {"Strict-Transport-Security": "max-age=31536000; includeSubDomains"},
+         {"Permissions-Policy": "camera=(self), microphone=(self), geolocation=()"}]
+    requires:
+      - name: srv-api
+        group: destinations
+        properties:
+          name: srv-api # must be used in xs-app.json as well
+          url: ~{srv-url}
+          forwardAuthToken: true
+      - name: mtx-api
+        group: destinations
+        properties:
+          name: mtx-api # must be used in xs-app.json as well
+          url: ~{mtx-url}
+      - name: kaizen-btp-auth
+    provides:
+      - name: app-api
+        properties:
+          app-protocol: ${protocol}
+          app-uri: ${default-uri}
+
+resources:
+  - name: kaizen-btp-auth
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: xsuaa
+      service-plan: application
+      path: ./xs-security.json
+      config:
+        xsappname: kaizen-btp-${org}-${space}
+        tenant-mode: shared
+        oauth2-configuration:
+          credential-types:
+            - "binding-secret"
+            - "x509"
+          redirect-uris:
+            - https://*~{app-api/app-uri}/**
+        role-collections:
+          - name: 'Kaizen Operator'
+            description: 'Kaizen app: Operator'
+            role-template-references:
+              - '$XSAPPNAME.Operator'
+          - name: 'Kaizen Supervisor'
+            description: 'Kaizen app: Supervisor'
+            role-template-references:
+              - '$XSAPPNAME.Supervisor'
+          - name: 'Kaizen CI Manager'
+            description: 'Kaizen app: CI Manager'
+            role-template-references:
+              - '$XSAPPNAME.CIManager'
+          - name: 'Kaizen Plant Manager'
+            description: 'Kaizen app: Plant Manager'
+            role-template-references:
+              - '$XSAPPNAME.PlantManager'
+          - name: 'Kaizen EHS'
+            description: 'Kaizen app: EHS'
+            role-template-references:
+              - '$XSAPPNAME.EHS'
+          - name: 'Kaizen Admin'
+            description: 'Kaizen app: Admin'
+            role-template-references:
+              - '$XSAPPNAME.Admin'
+    requires:
+      - name: app-api
+  - name: kaizen-btp-db
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: service-manager
+      service-plan: container
+  - name: kaizen-btp-registry
+    type: org.cloudfoundry.managed-service
+    requires:
+      - name: mtx-api
+    parameters:
+      service: saas-registry
+      service-plan: application
+      config:
+        xsappname: kaizen-btp-${org}-${space}
+        appName: kaizen-btp-${org}-${space}
+        displayName: Kaizen
+        description: Kaizen capture, approval and TPM reporting
+        category: 'Manufacturing'
+        appUrls:
+          getDependencies: ~{mtx-api/mtx-url}/-/cds/saas-provisioning/dependencies
+          onSubscription: ~{mtx-api/mtx-url}/-/cds/saas-provisioning/tenant/{tenantId}
+          onSubscriptionAsync: true
+          onUnSubscriptionAsync: true
+          onUpdateDependenciesAsync: true
+          callbackTimeoutMillis: 300000 # Increase if your deployments are taking longer than that
+  - name: kaizen-btp-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite

@@ -22,3 +22,7 @@ mta_archives/
 .unlazy/
 .unlazy-hook-state.json
 .claude/settings.local.json
+
+# MTA build leftovers
+Makefile_*.mta
+.deploy/app-router/node_modules/

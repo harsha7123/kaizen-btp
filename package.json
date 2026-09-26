@@ -3,16 +3,17 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "@cap-js/hana": "^3.1.1",
+    "@cap-js/hana": "^3",
     "@sap-cloud-sdk/http-client": "^4.9.1",
     "@sap-cloud-sdk/resilience": "^4.9.1",
     "@sap/cds": "^10",
     "@sap/cds-mtxs": "^4",
-    "@sap/xssec": "^4.15.0"
+    "@sap/xssec": "^4"
   },
   "devDependencies": {
     "@cap-js/cds-test": "^1.0.2",
     "@cap-js/sqlite": "^3",
+    "@sap/cds-dk": "^10",
     "jsqr": "^1.4.0",
     "playwright": "^1.63.0"
   },
@@ -30,7 +31,10 @@
     "profile": "with-mtx-sidecar",
     "requires": {
       "[production]": {
-        "multitenancy": true
+        "multitenancy": true,
+        "auth": {
+          "kind": "xsuaa"
+        }
       },
       "[with-mtx]": {
         "multitenancy": true
@@ -124,7 +128,8 @@
             "path": "/sap/opu/odata/sap/API_MAINTNOTIFICATION"
           }
         }
-      }
+      },
+      "destinations": true
     },
     "server": {
       "body_parser": {

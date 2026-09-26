@@ -111,3 +111,21 @@ Scope: API_EQUIPMENT (read) and API_MAINTNOTIFICATION (write) as OData V2 remote
   CHECK: SAP_API_KEY=<key from api.sap.com> node test/verify-s4-sandbox.mjs
   EXPECT: live S/4 equipment resolved
   EVIDENCE: pending: needs Harsha's free API key (without it the script prints "skipped")
+
+# Gates: phase 6, deploy the demo to the BTP Trial
+
+OWNS: mta.yaml, xs-security.json, .deploy/app-router/**, DEPLOY.md, production parts of package.json, app/capture (CSRF, login expiry, network-first page)
+
+Scope: multi-tenant MTA (app router with tenant host pattern, CAP srv serving the web apps, MTX sidecar, XSUAA shared tenant mode with 6 roles and "Kaizen …" role collections, Service Manager HDI container per customer, SaaS registry, destination service for customer S/4). Security: every route behind XSUAA login except the MTX callback path (the sidecar checks its own tokens), CSRF protection on, security headers (nosniff, referrer policy, HSTS, permissions policy; X-Frame-Options SAMEORIGIN by default), mocked users and S/4 mocks off in production. Runbook: DEPLOY.md.
+
+- [x] G1: the production build is complete and the built server serves the apps and APIs
+  CHECK: npx cds build --production (+ copy of app/ as in mta.yaml), start gen/srv, GET /, /capture/, /kaizens/index.html, /a3/index.html, /odata/v4/kaizen/Equipment
+  EVIDENCE: 2026-09-26: build completed (HANA artifacts for all tables incl. drafts, sidecar, srv); all five URLs HTTP 200 from gen/srv.
+
+- [x] G2: the phone app keeps working behind the app router (CSRF token, network-first page, manifest with credentials) and still works offline
+  CHECK: node test/verify-capture.mjs
+  EVIDENCE: 2026-09-26: offline capture verified; negative control (no offline fallback in the new service worker) -> page reload fails (exit 1).
+
+- [ ] G3: deployed to the trial: two subaccounts subscribed on their own URLs, data isolated, demo script runs
+  CHECK: DEPLOY.md steps 0-3, then the demo script on customer 1 and an empty customer 2
+  EVIDENCE: pending: needs make on the PC (winget install ezwinports.make) and the go-ahead to run cf deploy

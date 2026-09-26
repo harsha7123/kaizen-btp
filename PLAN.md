@@ -45,7 +45,7 @@ Browser / phone ── App Router (tenant from subdomain) ── XSUAA (tenant-m
 | 3 | Approvals & management | Claude | Fiori Elements list/object pages (drafts), my-inbox, KPI page (count, cycle time, verified EUR by plant/pillar) | Maria scenario clickable end to end: **done** (G1-G4, incl. HANA and your click-through) | done |
 | 4 | AI assist | Claude | provider interface + photo-to-draft, 5-Why helper, A3 write-up, duplicate check | stub and real provider pass the same tests: **built; G1-G3 pass (stub + AI Core adapter vs. local imitation, clickable demo, HANA); G4 real AI Core pending access** | done (stub) |
 | 5 | S/4 integration | Claude + Harsha (API key) | `cds import` of Equipment/WorkCenter/Maintenance Notification APIs, mocked locally, destination-based remotely; `pmWriteBack` feature toggle | QR scan resolves live equipment from sandbox: **built; G1-G2 pass (mocked S/4, browser); G3 live sandbox waits for your API key** | done (mock) |
-| 6 | Deploy demo to Trial | Harsha runs, Claude prepares | `cds add hana,xsuaa,approuter,mta`, `mbt build`, `cf deploy`; second trial subaccount subscribes as "customer 2" | two subdomains, isolated data, demo script runs | 2-3 days |
+| 6 | Deploy demo to Trial | Harsha runs, Claude prepares | `cds add hana,xsuaa,approuter,mta`, `mbt build`, `cf deploy`; second trial subaccount subscribes as "customer 2" | two subdomains, isolated data, demo script runs: **prepared and built locally (G1-G2); deploy per DEPLOY.md pending** | ready to deploy |
 | 7 | Gamification & polish | Claude | points, badges, plant leaderboard, horizontal deployment of closed kaizens | tests + demo | 3 days |
 
 **Demo-ready: about 4 weeks.**

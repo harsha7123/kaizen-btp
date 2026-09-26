@@ -29,17 +29,34 @@ const done = { // synced kaizens, newest first, for the "my kaizens" list
 
 // ---- sync ----
 class Retry extends Error {} // network down, server busy or login expired: keep in queue, try later
-const send = async (method, path, body, type = 'application/json') => {
+// on BTP the app router demands a CSRF token for writes (none locally): fetch once, refresh when it expires
+let csrf
+const csrfToken = async () => csrf ??= (await fetch(API + '/', { credentials: 'include', headers: { 'x-csrf-token': 'fetch' } })
+  .then(r => r.headers.get('x-csrf-token'), () => null)) ?? ''
+const send = async (method, path, body, type = 'application/json', retried) => {
   let res
   try {
-    res = await fetch(API + path, { method, credentials: 'include', headers: { 'content-type': type, accept: 'application/json' }, body: type === 'application/json' ? JSON.stringify(body) : body })
+    const headers = { 'content-type': type, accept: 'application/json' }
+    if (method !== 'GET' && await csrfToken()) headers['x-csrf-token'] = csrf
+    res = await fetch(API + path, { method, credentials: 'include', headers, body: type === 'application/json' ? JSON.stringify(body) : body })
   } catch { throw new Retry('offline') }
+  if (res.status === 403 && res.headers.get('x-csrf-token')?.toLowerCase() === 'required' && !retried) {
+    csrf = undefined // expired token: fetch a new one and try once more
+    return send(method, path, body, type, true)
+  }
   if (res.status === 409 && method === 'POST') return null // already arrived on an earlier attempt
   if (res.status === 401 || res.status === 408 || res.status === 429 || res.status >= 500) throw new Retry(`server ${res.status}`)
   const text = await res.text()
   if (!res.ok) throw new Error(JSON.parse(text || '{}').error?.message || `HTTP ${res.status}`)
-  if (text && !res.headers.get('content-type')?.includes('json')) throw new Retry('login required') // app router login page
+  if (text && !res.headers.get('content-type')?.includes('json')) { loginExpired(); throw new Retry('login required') } // app router login page
   return text ? JSON.parse(text) : null
+}
+// the login session ended (e.g. overnight): kaizens stay queued; reloading the page shows the sign-in screen
+let loginToast
+function loginExpired () {
+  if (loginToast) return
+  loginToast = true
+  if (confirm('Your sign-in has expired. Sign in again to send your kaizens?')) location.reload()
 }
 
 async function sync () {
