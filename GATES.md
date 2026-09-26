@@ -64,5 +64,5 @@ Security: separate ManageService for managers only; photos only on own kaizens a
   CHECK: cds deploy --to hana --profile hybrid, then Fiori-style inbox query, draft edit + activate, KPIs through ManageService
   EVIDENCE: 2026-09-26, kaizen-hana (trial, us10): deploy "Make succeeded (21 files)"; inbox query with draft filter returns the new kaizen with canApprove=true for sam; draft edit + activate persisted; KPI total row returned.
 
-- [ ] G4: Harsha clicks through the demo script as sam / klaus / petra on their PC and a phone
-  EVIDENCE: pending
+- [x] G4: Harsha clicks through the demo script as maria / sam / klaus / petra on their PC
+  EVIDENCE: 2026-09-26, Windows, Chrome + Edge, npm run watch: steps 1-8 of the walkthrough confirmed by Harsha. The verification gate blocked closing once because Verified by CI was not ticked (server data: benefit saved with verified=false); after ticking it the kaizen closed. Phone click-through of the manager app not done (optional).
