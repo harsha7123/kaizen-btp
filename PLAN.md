@@ -39,7 +39,7 @@ Browser / phone ── App Router (tenant from subdomain) ── XSUAA (tenant-m
 
 | # | Phase | Who | Deliverable | Exit gate | Est. |
 |---|---|---|---|---|---|
-| 0 | Accounts & tools | Harsha | BTP Trial, HANA Cloud trial instance, CF space; Node 24, `@sap/cds-dk`, `cf` CLI + MultiApps plugin, `mbt`; GitHub repo | `cds v` and `cf target` work | 1 day |
+| 0 | Accounts & tools | Harsha | BTP Trial, HANA Cloud trial instance, CF space; Node 24, `@sap/cds-dk`, `cf` CLI + MultiApps plugin, `mbt`; GitHub repo | `cds v` and `cf target` work: **done** (us10 trial, HANA `kaizen-hana` mapped to CF space dev, smoke test passed on HANA) | done |
 | **1** | **Core backend (local, multi-tenant)** | Claude | data model, workflow state machine, routing, verification gate, roles, audit trail, 2 local tenants | `GATES.md` phase 1: **done** | done |
 | 2 | Shop-floor capture app | Claude, Harsha tests on phone | UI5 PWA: QR scan, camera (Before/After), voice-to-text, offline queue, submit in < 60 s | submit works offline then syncs; Lighthouse PWA check | 1 week |
 | 3 | Approvals & management | Claude | Fiori Elements list/object pages (drafts), my-inbox, KPI page (count, cycle time, verified EUR by plant/pillar) | Maria scenario clickable end to end | 1 week |
@@ -76,5 +76,7 @@ npm test                         # workflow tests (single tenant, in-memory)
 node test/verify-tenants.mjs     # real MTX sidecar, tenants t1/t2, isolation proof
 npm run watch                    # single-tenant dev server on :4004 (users: maria, sam, klaus, petra, eva, admin)
 ```
+
+Against real HANA (after Phase 0): start `kaizen-hana` in HANA Cloud Central (it stops nightly), then `npm run hybrid` (uses the `kaizen-smoke-db` HDI container bound in `.cdsrc-private.json`; redeploy the model with `cds deploy --to hana --profile hybrid`).
 
 Multi-tenant by hand: `npm run sidecar` in one terminal, `npm run watch:mtx` in another, then `cds subscribe t1 --to http://localhost:4005 -u yves:` (and `t2`). `erin` belongs to t2.
