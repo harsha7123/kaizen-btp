@@ -3,7 +3,7 @@
 // gets 409 from the server instead of creating a duplicate.
 const API = '/odata/v4/kaizen'
 const $ = id => document.getElementById(id)
-const state = { mode: 'new', photos: [], pillar: null, pick: null, equipment: [], open: [], syncing: false }
+const state = { mode: 'new', photos: [], pillar: null, pick: null, equipment: [], open: [], syncing: false, aiDrafted: false }
 
 // ---- IndexedDB queue ----
 const db = new Promise((ok, fail) => {
@@ -139,7 +139,7 @@ function setMode (mode) {
   $('tab-after').setAttribute('aria-selected', mode === 'after')
   $('photo-h').textContent = mode === 'after' ? '3 · After photo' : '2 · Before photo'
   $('submit').textContent = mode === 'after' ? 'Save After photo' : 'Submit kaizen'
-  showMachine()
+  showMachine(); aiVisible()
 }
 
 async function scan () {
@@ -199,6 +199,36 @@ function renderPhotos () {
     return f
   }))
   $('photo-btn').textContent = state.photos.length ? '📸 Add another photo' : '📸 Take photo'
+  aiVisible()
+}
+
+// ---- AI assist (online only): draft the text from the photo; warn about duplicates before submitting ----
+const aiVisible = () => { $('ai-draft').hidden = !(navigator.onLine && state.mode === 'new' && state.photos.length) }
+const toBase64 = blob => new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result.split(',')[1]); r.readAsDataURL(blob) })
+const knownMachine = () => { const id = $('equipment').value.trim().toUpperCase(); return state.equipment.some(e => e.ID === id) ? id : null }
+async function aiDraft () {
+  const btn = $('ai-draft')
+  btn.disabled = true; btn.textContent = '✨ Drafting…'
+  try {
+    const image = await toBase64(await shrink(state.photos[0].blob, 768))
+    const d = await send('POST', '/draftFromPhoto', { image, equipment_ID: knownMachine(), hint: $('title').value.trim() || null })
+    if (!$('title').value.trim() && d.title) $('title').value = d.title
+    if (!$('problem').value.trim() && d.problem) $('problem').value = d.problem
+    if (!state.pillar && d.pillar_code) $('pillars').querySelector(`[data-code="${d.pillar_code}"]`)?.click()
+    if (d.isSafety) $('safety').checked = true
+    state.aiDrafted = true
+    $('ai-note').hidden = false; $('title-err').hidden = true
+  } catch (e) {
+    toast(e instanceof Retry ? 'The AI assistant is not available right now' : e.message)
+  } finally { btn.disabled = false; btn.textContent = '✨ Draft with AI from the photo' }
+}
+const literal = s => `'${encodeURIComponent((s ?? '').replace(/'/g, "''"))}'`
+async function looksLikeDuplicate (title, problem, equipment) {
+  if (!navigator.onLine) return false
+  try {
+    const [hit] = (await send('GET', `/similar(title=${literal(title)},problem=${literal(problem)},equipment_ID=${literal(equipment)})`)).value
+    return hit && !confirm(`This looks like ${hit.number} "${hit.title}" (${hit.status}), already reported.\n\nSubmit anyway?`)
+  } catch { return false } // the check must never block reporting
 }
 
 // ---- voice to text (Web Speech API where available; keyboard dictation otherwise) ----
@@ -237,13 +267,14 @@ async function submit (ev) {
   if (!machineOk) return $('equipment').focus()
   if (!title) return $('title').focus()
   if (!state.pillar) return $('pillars').scrollIntoView({ behavior: 'smooth', block: 'center' })
+  if (await looksLikeDuplicate(title, $('problem').value.trim(), equipment)) return
   const benefit = parseFloat($('benefit').value)
   await queue.put({
     ID: crypto.randomUUID(),
     createdAt: Date.now(),
     data: {
       title, problem: $('problem').value.trim() || null, pillar_code: state.pillar, isSafety: $('safety').checked,
-      equipment_ID: equipment || null, estimatedBenefit: Number.isFinite(benefit) ? benefit : null
+      equipment_ID: equipment || null, estimatedBenefit: Number.isFinite(benefit) ? benefit : null, aiDrafted: state.aiDrafted
     },
     photos: state.photos.map(p => ({ ID: crypto.randomUUID(), kind: 'Before', blob: p.blob }))
   })
@@ -263,8 +294,8 @@ async function submitAfter () {
 }
 async function afterSubmit () {
   state.photos.forEach(p => URL.revokeObjectURL(p.url))
-  $('form').reset(); state.photos = []; state.pillar = null; state.pick = null
-  $('photo-err').hidden = true
+  $('form').reset(); state.photos = []; state.pillar = null; state.pick = null; state.aiDrafted = false
+  $('photo-err').hidden = true; $('ai-note').hidden = true
   renderPhotos(); showMachine()
   for (const x of $('pillars').children) x.setAttribute('aria-pressed', false)
   toast(navigator.onLine ? 'Sending…' : 'Saved on phone: sends when back online')
@@ -311,6 +342,7 @@ function toast (msg) {
 // ---- wire up ----
 $('form').addEventListener('submit', submit)
 $('scan').onclick = scan
+$('ai-draft').onclick = aiDraft
 $('tab-new').onclick = () => setMode('new')
 $('tab-after').onclick = () => setMode('after')
 $('equipment').addEventListener('input', () => { $('equipment-err').hidden = true; showMachine() })
@@ -325,8 +357,8 @@ $('photo').onchange = async e => {
   $('photo-err').hidden = true
   renderPhotos()
 }
-addEventListener('online', () => { render(); sync() })
-addEventListener('offline', render)
+addEventListener('online', () => { render(); sync(); aiVisible() })
+addEventListener('offline', () => { render(); aiVisible() })
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { sync(); loadMasterData() } })
 
 const eq = new URLSearchParams(location.search).get('eq') // QR label link opened by the phone camera

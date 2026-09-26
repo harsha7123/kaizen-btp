@@ -98,6 +98,14 @@
         "[production]": {
           "kind": "xsuaa"
         }
+      },
+      "ai": {
+        "kind": "stub"
+      }
+    },
+    "server": {
+      "body_parser": {
+        "limit": "1mb"
       }
     }
   }

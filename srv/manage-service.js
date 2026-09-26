@@ -1,5 +1,6 @@
 import cds from '@sap/cds'
 import KaizenService, { isAny } from './kaizen-service.js'
+import { fiveWhy, a3, spend } from './ai/index.js'
 
 const DECIDERS = ['Supervisor', 'CIManager', 'PlantManager', 'EHS']
 const CLOSERS = ['CIManager', 'PlantManager', 'Admin']
@@ -29,7 +30,7 @@ export default class ManageService extends KaizenService {
     const { Kaizens, Benefits, Plants, Pillars } = cds.entities('kaizen')
 
     // button visibility: computed from the same facts the action handlers check
-    const CAN = ['canApprove', 'canStart', 'canRequestVerification', 'canClose']
+    const CAN = ['canApprove', 'canStart', 'canRequestVerification', 'canClose', 'canAnalyze']
     this.before('READ', 'Kaizens', req => {
       const cols = req.query.SELECT.columns
       if (cols && cols.some(c => CAN.includes(c.ref?.[0])))
@@ -43,6 +44,7 @@ export default class ManageService extends KaizenService {
         k.canStart = k.status_code === 'Approved' && isAny(u, CLOSERS)
         k.canRequestVerification = k.status_code === 'InProgress' && (k.owner === u.id || isAny(u, CLOSERS))
         k.canClose = k.status_code === 'Verification' && isAny(u, CLOSERS)
+        k.canAnalyze = !['Closed', 'Rejected'].includes(k.status_code)
       }
     })
 
@@ -74,6 +76,39 @@ export default class ManageService extends KaizenService {
       })).sort((a, b) => (a.plant === 'ALL') - (b.plant === 'ALL') || a.plant.localeCompare(b.plant) || a.pillar.localeCompare(b.pillar))
       rows.$count = rows.length
       return rows
+    })
+
+    // ---- AI assist: 5-Why and A3, written straight to the active kaizen ----
+    const { Tasks, Equipment, Statuses } = cds.entities('kaizen')
+    const facts = async ID => {
+      const k = await SELECT.one.from(Kaizens, ID)
+      const [plant, pillar, eq, status, tasks, benefits] = await Promise.all([
+        SELECT.one.from(Plants, k.plant_ID), SELECT.one.from(Pillars, k.pillar_code), k.equipment_ID && SELECT.one.from(Equipment, k.equipment_ID),
+        SELECT.one.from(Statuses, k.status_code),
+        SELECT.from(Tasks).columns('title', 'owner', 'done').where({ kaizen_ID: ID }),
+        SELECT.from(Benefits).columns('type', 'baseline', 'improved', 'unit', 'annualSaving', 'verified').where({ kaizen_ID: ID })
+      ])
+      return { ...k, plantName: plant?.name ?? k.plant_ID, pillarName: pillar?.name ?? k.pillar_code, machine: eq?.name, status: status?.name ?? k.status_code, tasks, benefits }
+    }
+    const ask = async (req, fn) => {
+      await spend(req)
+      try { return await fn() } catch (e) { cds.log('ai').warn(e.message); return req.reject(502, 'The AI assistant is not available right now') }
+    }
+    this.on('fiveWhy', 'Kaizens', async req => {
+      const { ID } = await SELECT.one.from(req.subject).columns('ID')
+      const k = await facts(ID)
+      if (['Closed', 'Rejected'].includes(k.status_code)) return req.reject(409, `Kaizen is ${k.status_code}`)
+      const r = await ask(req, () => fiveWhy({ title: k.title, problem: k.problem, machine: k.machine }))
+      const text = r.whys.map((w, i) => `${i + 1}. ${w.question}\n   → ${w.answer}`).join('\n') + `\nRoot cause: ${r.rootCause}`
+      await UPDATE(Kaizens, ID).with({ fiveWhy: text, ...(!k.rootCause && { rootCause: r.rootCause }) })
+      return SELECT.one.from(req.subject)
+    })
+    this.on('generateA3', 'Kaizens', async req => {
+      const { ID } = await SELECT.one.from(req.subject).columns('ID')
+      const k = await facts(ID)
+      const report = await ask(req, () => a3({ ...k, createdAt: new Date(k.createdAt).toISOString() }))
+      await UPDATE(Kaizens, ID).with({ a3: JSON.stringify(report) })
+      return SELECT.one.from(req.subject)
     })
 
     await super.init()

@@ -60,6 +60,9 @@ try {
   await maria.locator('#pillars button').first().waitFor()
   await maria.setInputFiles('#photo', photo)
   await maria.locator('#photos img').waitFor()
+  await maria.click('#ai-draft') // AI drafts from the photo; Maria then corrects the title
+  await maria.locator('#ai-note').waitFor({ timeout: 10000 })
+  check((await maria.inputValue('#title')).includes('P-1042'), 'AI draft did not fill the title')
   await maria.fill('#title', 'Oil leak at pump seal')
   await maria.fill('#problem', 'Oil dripping from the shaft seal every shift')
   await maria.click('#pillars button[data-code=AM]')
@@ -68,7 +71,7 @@ try {
   const sent = maria.locator('.item[data-state=done]').first()
   await sent.waitFor({ timeout: 15000 })
   const number = (await sent.textContent()).match(/KAI-\d{4}-\d{4}/)[0]
-  step(`maria captured ${number}`)
+  step(`maria captured ${number} (text drafted with AI, then corrected)`)
 
   // 2. Sam approves from his inbox
   const sam = await as('sam')
@@ -85,6 +88,9 @@ try {
   await statusIs(klaus, 'Approved')
   await run(klaus, 'Start', { 'Owner': 'klaus' })
   await statusIs(klaus, 'In Progress')
+  await run(klaus, '✨ 5-Why analysis')
+  await klaus.locator('[id$="fe::FacetSection::analysis"]').scrollIntoViewIfNeeded()
+  await klaus.getByText(/^1. Why/).first().waitFor({ state: 'attached', timeout: 15000 }) // long text is shown collapsed
   await editAndSave(klaus, async () => {
     const task = (await editableRow(klaus, 'tasks')).locator('input:not([type=checkbox])')
     await task.first().fill('Replace seal on P-1042')
@@ -97,7 +103,7 @@ try {
   })
   await table(klaus, 'tasks').getByText('Replace seal on P-1042').waitFor({ timeout: 10000 })
   await table(klaus, 'benefits').getByText('14,200.00').waitFor({ timeout: 10000 })
-  step('klaus approved, started, added a task and a verified 14,200 EUR OEE benefit')
+  step('klaus approved, started, ran the 5-Why analysis, added a task and a verified 14,200 EUR OEE benefit')
 
   // 4. verification gate blocks closing
   await run(klaus, 'Request verification')
@@ -136,6 +142,16 @@ try {
   await statusIs(klaus, 'Closed')
   check(await klaus.getByText('Before', { exact: true }).count() > 0 && await klaus.getByText('After', { exact: true }).count() > 0, 'Before and After photos not both shown')
   step('klaus added the After photo, finished the task and closed the kaizen')
+
+  // A3 report: generated from the kaizen data, printable with Before and After photos
+  await run(klaus, '✨ Generate A3')
+  await klaus.waitForTimeout(1500)
+  const id = decodeURIComponent(klaus.url()).match(/ID=([0-9a-f-]{36})/)[1]
+  await klaus.goto(`${BASE}/a3/index.html?ID=${id}`)
+  await klaus.getByText('1 · Background').waitFor({ timeout: 15000 })
+  await klaus.waitForFunction(() => [...document.images].filter(i => i.complete && i.naturalWidth > 0).length === 2, null, { timeout: 15000 })
+  check((await klaus.textContent('body')).includes('14,200'), 'A3 results do not show the verified saving')
+  step('klaus generated the A3 report with 5-Why, Before/After photos and the 14,200 EUR result')
 
   // 6. Petra sees the verified saving
   const petra = await as('petra')

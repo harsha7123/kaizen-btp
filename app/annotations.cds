@@ -23,6 +23,10 @@ annotate db.Kaizens with {
   closedAt         @title: 'Closed at';
   createdBy        @title: 'Created by';
   createdAt        @title: 'Created at';
+  aiDrafted        @title: 'Drafted with AI';
+  fiveWhy          @title: '5-Why analysis'   @UI.MultiLineText;
+  similarTo        @title: 'Possible duplicate of' @Common.Text: similarTo.title @Common.TextArrangement: #TextLast;
+  similarity       @title: 'Similarity';
 }
 annotate db.Photos with {
   kind @title: 'Kind'; content @title: 'Photo'; createdBy @title: 'By'; createdAt @title: 'Taken at';
@@ -80,18 +84,25 @@ annotate s.Kaizens with @(
     { $Type: 'UI.DataFieldForAction', Action: 'ManageService.reject', Label: 'Reject' },
     { $Type: 'UI.DataFieldForAction', Action: 'ManageService.start', Label: 'Start' },
     { $Type: 'UI.DataFieldForAction', Action: 'ManageService.requestVerification', Label: 'Request verification' },
-    { $Type: 'UI.DataFieldForAction', Action: 'ManageService.close', Label: 'Close kaizen' }
+    { $Type: 'UI.DataFieldForAction', Action: 'ManageService.close', Label: 'Close kaizen' },
+    { $Type: 'UI.DataFieldForAction', Action: 'ManageService.fiveWhy', Label: '✨ 5-Why analysis' },
+    { $Type: 'UI.DataFieldForAction', Action: 'ManageService.generateA3', Label: '✨ Generate A3' }
   ],
   UI.HeaderFacets: [{ $Type: 'UI.ReferenceFacet', Target: '@UI.FieldGroup#Workflow' }],
   UI.FieldGroup #Workflow: { Data: [{ Value: status_code, ![@UI.Importance]: #High }, { Value: nextRole, ![@UI.Importance]: #High }, { Value: owner }, { Value: dueDate }] },
   UI.FieldGroup #Details: { Data: [
-    { Value: title, ![@UI.Importance]: #High }, { Value: problem }, { Value: rootCause }, { Value: countermeasure }, { Value: wasteType },
-    { Value: pillar_code, ![@UI.Importance]: #High }, { Value: isSafety, ![@UI.Importance]: #High }, { Value: estimatedBenefit, ![@UI.Importance]: #High }
+    { Value: title }, { Value: problem }, { Value: rootCause }, { Value: countermeasure }, { Value: wasteType },
+    { Value: pillar_code }, { Value: isSafety }, { Value: estimatedBenefit }, { Value: aiDrafted }, { Value: similarTo_ID }, { Value: similarity }
   ] },
-  UI.FieldGroup #Where: { Data: [{ Value: equipment_ID, ![@UI.Importance]: #High }, { Value: plant_ID, ![@UI.Importance]: #High }, { Value: createdBy }, { Value: createdAt }, { Value: closedAt }] },
+  UI.FieldGroup #Analysis: { Data: [
+    { Value: fiveWhy }, { Value: rootCause },
+    { $Type: 'UI.DataFieldWithUrl', Value: 'Open printable A3 report', Url: a3Url, Label: 'A3 report' }
+  ] },
+  UI.FieldGroup #Where: { Data: [{ Value: equipment_ID }, { Value: plant_ID }, { Value: createdBy }, { Value: createdAt }, { Value: closedAt }] },
   UI.Facets: [
     { $Type: 'UI.ReferenceFacet', ID: 'details', Label: 'Details', Target: '@UI.FieldGroup#Details' },
     { $Type: 'UI.ReferenceFacet', ID: 'where', Label: 'Machine', Target: '@UI.FieldGroup#Where' },
+    { $Type: 'UI.ReferenceFacet', ID: 'analysis', Label: 'Analysis (AI assisted)', Target: '@UI.FieldGroup#Analysis' },
     { $Type: 'UI.ReferenceFacet', ID: 'photos', Label: 'Photos', Target: 'photos/@UI.LineItem' },
     { $Type: 'UI.ReferenceFacet', ID: 'tasks', Label: 'Tasks', Target: 'tasks/@UI.LineItem' },
     { $Type: 'UI.ReferenceFacet', ID: 'benefits', Label: 'Benefits', Target: 'benefits/@UI.LineItem' },
@@ -110,6 +121,9 @@ annotate s.Kaizens with actions {
           @Common.SideEffects: { TargetProperties: ['in/*'], TargetEntities: ['in/history'] };
   close   @Core.OperationAvailable: { $edmJson: { $Path: 'in/canClose' } }
           @Common.SideEffects: { TargetProperties: ['in/*'], TargetEntities: ['in/history'] };
+  fiveWhy @Core.OperationAvailable: { $edmJson: { $Path: 'in/canAnalyze' } }
+          @Common.SideEffects: { TargetProperties: ['in/fiveWhy', 'in/rootCause'] };
+  generateA3 @Common.SideEffects: { TargetProperties: ['in/a3'] };
 }
 
 

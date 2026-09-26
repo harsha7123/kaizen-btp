@@ -1,11 +1,13 @@
 import cds from '@sap/cds'
+import { draftFromPhoto, spend } from './ai/index.js'
+import { findSimilar } from './ai/similar.js'
 
 // Kaizen lifecycle: Submitted -> InReview -> Approved -> InProgress -> Verification -> Closed
 //                            \-> Rejected (from Submitted / InReview)
 // Shared by KaizenService (phone app, non-draft) and ManageService (Fiori, draft), which extends this class.
 export const MANAGERS = ['Supervisor', 'CIManager', 'PlantManager', 'EHS', 'Admin']
 const VERIFIERS = ['CIManager', 'PlantManager', 'Admin']
-const WORKFLOW_FIELDS = ['number', 'status_code', 'step', 'route_ID', 'nextRole', 'closedAt']
+const WORKFLOW_FIELDS = ['number', 'status_code', 'step', 'route_ID', 'nextRole', 'closedAt', 'fiveWhy', 'a3', 'similarTo_ID', 'similarity']
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024 // the phone sends ~0.3 MB; anything near this limit is not a phone photo
 
@@ -69,6 +71,8 @@ export default class KaizenService extends cds.ApplicationService {
       const route = routes.find(r => r.maxBenefit == null || (d.estimatedBenefit ?? 0) <= +r.maxBenefit)
       d.route_ID = route?.ID
       d.nextRole = await nextRoleOf(d, 'Submitted')
+      const [best] = await findSimilar(d, 1) // possible duplicate, shown to the approvers
+      if (best) { d.similarTo_ID = best.ID; d.similarity = best.score }
     })
 
     this.after('CREATE', 'Kaizens', (_, req) => INSERT.into(StatusHistory).entries({ kaizen_ID: req.data.ID, toStatus: 'Submitted' }))
@@ -170,6 +174,22 @@ export default class KaizenService extends cds.ApplicationService {
       if (k && !isAny(req.user, MANAGERS) && k.status_code !== 'Submitted')
         return req.reject(409, 'Operators can only edit a kaizen until the first approval')
     })
+
+    // ---- AI assist for the phone app ----
+    this.on('draftFromPhoto', async req => {
+      const { image, equipment_ID, hint } = req.data
+      if (image) {
+        if (image.length > 1_400_000) return req.reject(413, 'Photo for AI is too large (max ~1 MB)')
+        const head = Buffer.from(image.slice(0, 16), 'base64')
+        if (!(head[0] === 0xff && head[1] === 0xd8) && !(head[0] === 0x89 && head[1] === 0x50)) return req.reject(415, 'Photo must be JPEG or PNG')
+      }
+      await spend(req)
+      const eq = equipment_ID && await SELECT.one.from('kaizen.Equipment', equipment_ID)
+      const machine = eq && { ...eq, plantName: (await SELECT.one.from('kaizen.Plants', eq.plant_ID))?.name ?? eq.plant_ID }
+      try { return await draftFromPhoto({ image, machine, hint, lang: req.locale }) }
+      catch (e) { cds.log('ai').warn(e.message); return req.reject(502, 'The AI assistant is not available right now') }
+    })
+    this.on('similar', req => findSimilar(req.data))
 
     return super.init()
   }

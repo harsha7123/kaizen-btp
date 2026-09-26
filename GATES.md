@@ -66,3 +66,27 @@ Security: separate ManageService for managers only; photos only on own kaizens a
 
 - [x] G4: Harsha clicks through the demo script as maria / sam / klaus / petra on their PC
   EVIDENCE: 2026-09-26, Windows, Chrome + Edge, npm run watch: steps 1-8 of the walkthrough confirmed by Harsha. The verification gate blocked closing once because Verified by CI was not ticked (server data: benefit saved with verified=false); after ticking it the kaizen closed. Phone click-through of the manager app not done (optional).
+
+# Gates: phase 4, AI assist
+
+OWNS: srv/ai/**, test/ai.test.js, app/a3/**, AI parts of srv/*.js, srv/*.cds, app/capture/*, app/annotations.cds
+
+Scope: provider interface (srv/ai/index.js) with 'stub' (default: free, offline, deterministic) and 'aicore' (SAP AI Core generative AI hub, orchestration REST, OAuth client credentials). Features: draft from photo (phone, online only), 5-Why analysis and A3 report (Fiori buttons, printable A3 page with Before/After photos), duplicate check (word overlap, no AI: warning on the phone, "possible duplicate" stored for approvers).
+Security: AI output is untrusted (cut to size, pillar codes and booleans validated, A3 limited to 7 known sections); AI fields writable only by actions; per-user AI budget (30 calls / 10 min, 429); only JPEG/PNG sent to AI (415), max ~1 MB; photos shrunk to 768 px on the phone.
+
+- [x] G1: stub and AI Core adapter pass the same contract tests; features and safety rules hold at the API
+  CHECK: node --test --test-reporter=tap test/ai.test.js
+  EXPECT: /# pass [1-9]\d*\r?\n# fail 0/
+  EVIDENCE: 2026-09-26, Node 24.21.0: # pass 10 / # fail 0 (contract x2: stub, aicore against a local imitation of AI Core OAuth + /completion). Negative controls: trusting the AI's pillar code -> aicore contract fails; no AI budget -> "budgeted per user" fails; no image check -> "only for real images" fails.
+
+- [x] G2: the AI steps are part of the clickable Maria scenario (draft with AI on the phone, 5-Why in Fiori, A3 report with both photos and the verified saving)
+  CHECK: node test/verify-manage.mjs
+  EXPECT: maria scenario clickable
+  EVIDENCE: 2026-09-26, Edge, UI5 1.136.22: maria scenario clickable (exit 0).
+
+- [x] G3: duplicate flag, 5-Why and A3 work on HANA Cloud (hybrid)
+  EVIDENCE: 2026-09-26, kaizen-hana: deploy "Make succeeded (4 files)"; duplicate flagged (similarity 1.00), 5-Why stored, A3 with 7 sections stored.
+
+- [ ] G4: the same contract tests pass against the real SAP AI Core (needs an AI Core instance with an orchestration deployment)
+  CHECK: set AICORE_SERVICE_KEY (service key JSON) and AICORE_DEPLOYMENT_URL, then node --test --test-reporter=tap test/ai.test.js (adds "AI contract: aicore (real SAP AI Core)")
+  EVIDENCE: pending: the BTP trial has no generative AI hub; runs when a paid/partner AI Core is available

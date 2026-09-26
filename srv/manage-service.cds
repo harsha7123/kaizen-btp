@@ -15,6 +15,7 @@ service ManageService {
     { grant: 'start', to: ['CIManager', 'PlantManager'] },
     { grant: 'requestVerification', to: 'authenticated-user' },
     { grant: 'close', to: ['CIManager', 'PlantManager'] },
+    { grant: ['fiveWhy', 'generateA3'], to: ['Supervisor', 'CIManager', 'PlantManager', 'EHS'] },
     { grant: '*', to: 'Admin' }
   ]
   entity Kaizens as projection on db.Kaizens {
@@ -27,13 +28,19 @@ service ManageService {
     virtual canApprove : Boolean,
     virtual canStart   : Boolean,
     virtual canRequestVerification : Boolean,
-    virtual canClose   : Boolean
+    virtual canClose   : Boolean,
+    virtual canAnalyze : Boolean,
+    // printable A3 report page (app/a3)
+    '/a3/index.html?ID=' || ID as a3Url : String(80)
   } excluding { photos, history } actions {
     action approve(note : String @title: 'Note') returns Kaizens;
     action reject(note : String @mandatory @title: 'Reason') returns Kaizens;
     action start(owner : String @mandatory @title: 'Owner (user ID)', dueDate : Date @title: 'Due date') returns Kaizens;
     action requestVerification() returns Kaizens;
     action close(note : String @title: 'Note') returns Kaizens;
+    // AI assist: fills fiveWhy (and rootCause if empty) / the A3 report
+    action fiveWhy() returns Kaizens;
+    action generateA3() returns Kaizens;
   };
 
   entity Tasks    as projection on db.Tasks;

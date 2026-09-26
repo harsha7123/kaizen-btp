@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A3 Report</title>
+  <style>
+    @page { size: A3 landscape; margin: 12mm; }
+    :root { --text: #1d2d3e; --muted: #556b82; --line: #c9d1d9; --head: #0854a0; --bg: #fff; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--text); background: #eef1f4; }
+    .bar { display: flex; gap: 8px; justify-content: flex-end; max-width: 1400px; margin: 0 auto; padding: 12px 16px; }
+    .bar button { font: inherit; font-weight: 600; padding: 10px 16px; border-radius: 8px; border: 0; background: var(--head); color: #fff; cursor: pointer; }
+    .sheet { max-width: 1400px; margin: 0 auto 24px; background: var(--bg); padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+    header { display: grid; grid-template-columns: 1fr auto; gap: 8px 24px; border-bottom: 3px solid var(--head); padding-bottom: 12px; margin-bottom: 16px; }
+    header h1 { margin: 0; font-size: 24px; }
+    header .num { color: var(--head); font-weight: 700; font-size: 18px; text-align: right; }
+    header .meta { grid-column: 1 / -1; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 20px; }
+    header .meta b { color: var(--text); font-weight: 600; }
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    section { border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; margin-bottom: 16px; break-inside: avoid; }
+    section h2 { margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--head); }
+    section p { margin: 0; white-space: pre-line; }
+    .photos { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .photos figure { margin: 0; }
+    .photos img { width: 180px; height: 135px; object-fit: cover; border-radius: 4px; border: 1px solid var(--line); display: block; }
+    .photos figcaption { font-size: 12px; color: var(--muted); }
+    .note { color: var(--muted); font-size: 12px; margin-top: 8px; }
+    .empty { max-width: 700px; margin: 60px auto; background: #fff; padding: 24px; border-radius: 12px; }
+    @media (max-width: 800px) { .cols { grid-template-columns: 1fr; } }
+    @media print { body { background: #fff; } .bar { display: none; } .sheet { box-shadow: none; padding: 0; max-width: none; } }
+  </style>
+</head>
+<body>
+  <div class="bar"><button type="button" onclick="print()">Print / save as PDF</button></div>
+  <main id="root"></main>
+  <script type="module">
+    const API = '/odata/v4/kaizen'
+    const root = document.getElementById('root')
+    const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids); return e }
+    const fail = msg => root.replaceChildren(el('div', { className: 'empty' }, el('h2', { textContent: 'A3 report' }), el('p', { textContent: msg })))
+
+    const ID = new URLSearchParams(location.search).get('ID')
+    if (!/^[0-9a-f-]{36}$/i.test(ID ?? '')) fail('Open this page from a kaizen in Manage Kaizens.')
+    else {
+      const res = await fetch(`${API}/Kaizens(${ID})?$expand=photos($select=ID,kind;$orderby=createdAt),plant($select=name),pillar($select=name),equipment($select=name),status($select=name)`)
+      if (!res.ok) fail(`Could not load the kaizen (HTTP ${res.status}).`)
+      else {
+        const k = await res.json()
+        if (!k.a3) fail(`${k.number}: no A3 yet. In Manage Kaizens, open the kaizen and press "✨ Generate A3".`)
+        else render(k, JSON.parse(k.a3))
+      }
+    }
+
+    function render (k, a3) {
+      document.title = `A3 ${k.number}`
+      const pics = kind => el('div', { className: 'photos' }, ...k.photos.filter(p => p.kind === kind).map(p =>
+        el('figure', {}, el('img', { src: `${API}/Photos(${p.ID})/content`, alt: `${kind} photo` }), el('figcaption', { textContent: kind }))))
+      const sec = (title, text, ...extra) => el('section', {}, el('h2', { textContent: title }), el('p', { textContent: text }), ...extra)
+      const meta = [['Plant', k.plant?.name], ['Machine', k.equipment?.name ?? k.equipment_ID], ['Pillar', k.pillar?.name], ['Status', k.status?.name],
+        ['Reported by', k.createdBy], ['Owner', k.owner], ['Reported', k.createdAt?.slice(0, 10)], ['Closed', k.closedAt?.slice(0, 10)]]
+        .filter(([, v]) => v).flatMap(([l, v]) => [el('span', {}, `${l}: `, el('b', { textContent: v }))])
+      root.replaceChildren(el('article', { className: 'sheet' },
+        el('header', {}, el('h1', { textContent: k.title }), el('div', { className: 'num', textContent: k.number }), el('div', { className: 'meta' }, ...meta)),
+        el('div', { className: 'cols' },
+          el('div', {},
+            sec('1 · Background', a3.background),
+            sec('2 · Current condition', a3.currentCondition, pics('Before')),
+            sec('3 · Goal', a3.goal),
+            sec('4 · Root cause analysis', k.fiveWhy ? `${k.fiveWhy}` : a3.rootCause)),
+          el('div', {},
+            sec('5 · Countermeasures', a3.countermeasures),
+            sec('6 · Results', a3.results, pics('After')),
+            sec('7 · Follow-up and standardisation', a3.followUp),
+            el('p', { className: 'note', textContent: 'Drafted with AI assistance from the kaizen data; reviewed by the kaizen owner.' })))))
+    }
+  </script>
+</body>
+</html>

@@ -46,6 +46,12 @@ entity Kaizens : cuid, managed {
   step        : Integer default 0 @readonly; // index into route.approvers
   nextRole    : String(20) @readonly; // who acts next: an approver role, 'CIManager' (start/close) or 'Owner'; drives the inbox
   closedAt    : Timestamp @readonly; // for cycle time KPIs
+  // AI assist (Phase 4): written by actions only; aiDrafted is set by the phone when the operator used "Draft with AI"
+  aiDrafted   : Boolean default false;
+  fiveWhy     : LargeString @readonly;
+  a3          : LargeString @readonly; // JSON: background, currentCondition, goal, rootCause, countermeasures, results, followUp
+  similarTo   : Association to Kaizens @readonly; // best match from the duplicate check at creation
+  similarity  : Decimal(3, 2) @readonly;
   route       : Association to WorkflowRoutes @readonly;
   equipment   : Association to Equipment;
   plant       : Association to Plants; // derived from equipment when scanned

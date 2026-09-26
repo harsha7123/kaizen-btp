@@ -19,3 +19,16 @@ node test/verify-capture.mjs   # offline capture gate (real browser: Edge on Win
 node test/verify-manage.mjs    # Maria scenario clicked through the Fiori apps (needs internet for SAPUI5)
 npm run hybrid                 # same, against HANA Cloud (start kaizen-hana first; after model changes: cds deploy --to hana --profile hybrid)
 ```
+
+## AI assist
+
+Default provider is the free stand-in (`cds.requires.ai.kind: "stub"`). To use SAP AI Core (generative AI hub):
+
+1. Create an AI Core instance with an orchestration deployment (resource group `default`).
+2. Set in package.json under `cds.requires`:
+   ```json
+   "ai": { "kind": "aicore", "model": "gpt-4o", "resourceGroup": "default",
+           "deploymentUrl": "<AI_API_URL>/v2/inference/deployments/<deployment id>" }
+   ```
+3. Bind the `aicore` service (on BTP), or locally set `AICORE_SERVICE_KEY` to the service key JSON.
+4. Prove it: with `AICORE_SERVICE_KEY` and `AICORE_DEPLOYMENT_URL` set, `node --test test/ai.test.js` runs the same contract tests against the real service.

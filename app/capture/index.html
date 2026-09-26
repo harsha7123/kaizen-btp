@@ -69,6 +69,7 @@
     dialog .bar { display: flex; gap: 8px; padding: 16px; }
     dialog .bar button { flex: 1; }
     .hint { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
+    #ai-draft { margin-bottom: 12px; border-style: dashed; }
     .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--line); }
     .tabs button { border: 0; }
     .tabs button[aria-selected=true] { background: var(--primary); color: var(--on-primary); }
@@ -123,6 +124,8 @@
 
       <section class="new-only">
         <h2>3 · What did you see?</h2>
+        <button type="button" id="ai-draft" class="big" hidden>✨ Draft with AI from the photo</button>
+        <p id="ai-note" class="hint" hidden>AI draft: please check and correct before submitting.</p>
         <label for="title">Short title *</label>
         <div class="row">
           <input id="title" type="text" maxlength="120" placeholder="e.g. Oil leak at pump seal" required>

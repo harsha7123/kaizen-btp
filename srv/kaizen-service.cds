@@ -47,6 +47,15 @@ service KaizenService {
   entity Benefits      as projection on db.Benefits;
   @readonly entity StatusHistory as projection on db.StatusHistory;
 
+  // ---- AI assist (online only; the phone keeps working without it) ----
+  type DraftSuggestion {
+    title : String(120); problem : String(2000); pillar_code : String(4); wasteType : String(30); isSafety : Boolean; provider : String(10);
+  }
+  type SimilarKaizen { ID : UUID; number : String(20); title : String(120); status : String(20); score : Decimal(3, 2); }
+  // image: base64 JPEG, shrunk on the phone (768 px)
+  action draftFromPhoto(image : LargeString, equipment_ID : String(20), hint : String(120)) returns DraftSuggestion;
+  function similar(title : String(120), problem : String(2000), equipment_ID : String(20)) returns many SimilarKaizen;
+
   @readonly entity Plants      as projection on db.Plants;
   @readonly entity WorkCenters as projection on db.WorkCenters;
   @readonly entity Equipment   as projection on db.Equipment;
