@@ -9,7 +9,9 @@
   },
   "devDependencies": {
     "@cap-js/cds-test": "^1.0.2",
-    "@cap-js/sqlite": "^3"
+    "@cap-js/sqlite": "^3",
+    "jsqr": "^1.4.0",
+    "playwright": "^1.63.0"
   },
   "scripts": {
     "start": "cds-serve",

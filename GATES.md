@@ -21,3 +21,24 @@ Scope: CAP backend with the kaizen data model, workflow state machine, table-dri
 
 - [x] G4: Harsha runs npm test and the isolation script on their own PC
   EVIDENCE: 2026-09-26, Windows 11, Node 22.19.0: `node --test` -> # pass 7 / # fail 0; `node test/verify-tenants.mjs` -> tenant isolation verified (exit 0). Re-run same day on Node 24.21.0: # pass 7 / # fail 0.
+
+# Gates: phase 2, shop-floor capture app
+
+OWNS: app/capture/**, test/verify-capture.mjs, srv/kaizen-service.js (retry-safe create), test/workflow.test.js
+
+Scope: installable PWA at `/capture/` (plain HTML/JS served by CAP, no UI5 bootstrap, so it loads fast and fully offline): QR scan (native BarcodeDetector, jsQR fallback, `?eq=` label links), Before photo on a new kaizen or After photo on a started one, shrunk on the phone, voice-to-text, IndexedDB offline queue that syncs exactly once.
+
+Note: the plan said "Lighthouse PWA check", but Lighthouse 12 removed its PWA category. G2 checks the same installability criteria directly (manifest with standalone display, start_url, 192/512 icons; service worker controlling the page; app opens offline).
+
+- [x] G1: server accepts phone-generated IDs, answers a retried kaizen or photo with 409 (no duplicates), photo bytes round-trip
+  CHECK: node --test --test-reporter=tap test/workflow.test.js
+  EXPECT: /# pass [1-9]\d*\r?\n# fail 0/
+  EVIDENCE: 2026-09-26, Windows 11, Node 24.21.0: # pass 7 / # fail 0
+
+- [x] G2: in a real browser the app is installable, opens offline, queues a kaizen with a photo while offline, syncs it exactly once with the photo when back online, and attaches an After photo to a started kaizen
+  CHECK: node test/verify-capture.mjs
+  EXPECT: offline capture verified
+  EVIDENCE: 2026-09-26, Edge (Playwright 1.63), Node 24.21.0: offline capture verified (exit 0). Negative controls: without service worker -> "service worker did not activate" (exit 1); with photo upload skipped -> "Before photo missing" (exit 1); After photo saved as Before -> "expected Before + After photos" (exit 1).
+
+- [ ] G3: Harsha submits a kaizen on a real phone in under 60 s, including one in airplane mode that syncs after reconnecting
+  EVIDENCE: pending

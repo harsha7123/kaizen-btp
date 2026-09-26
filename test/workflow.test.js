@@ -2,7 +2,7 @@ import cds from '@sap/cds'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
-const { GET, POST, PATCH } = cds.test(import.meta.dirname + '/..')
+const { GET, POST, PATCH, PUT } = cds.test(import.meta.dirname + '/..')
 const as = username => ({ auth: { username, password: '' } })
 const K = '/odata/v4/kaizen/Kaizens'
 const act = (id, action, data, user) => POST(`${K}(${id})/KaizenService.${action}`, data ?? {}, as(user))
@@ -83,4 +83,19 @@ test('operators edit only their own kaizens and cannot fake status', async () =>
 test('kaizen numbers are sequential', async () => {
   const a = await create({ equipment_ID: 'P-1042' }), b = await create({ equipment_ID: 'P-1042' })
   assert.equal(+b.number.slice(-4), +a.number.slice(-4) + 1)
+})
+
+test('offline sync: client-chosen IDs, retry is detectable, photo bytes round-trip', async () => {
+  const ID = cds.utils.uuid(), photoID = cds.utils.uuid()
+  const k = await create({ ID, equipment_ID: 'P-1042' })
+  assert.equal(k.ID, ID, 'server keeps the ID generated on the phone')
+  await status(POST(K, { ID, title: 'retry', pillar_code: 'AM', equipment_ID: 'P-1042' }, as('maria')), 409) // a blind retry must not duplicate
+
+  const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 0xff, 0xd9])
+  const photo = { ID: photoID, kaizen_ID: ID, kind: 'Before', mediaType: 'image/jpeg' }
+  await POST('/odata/v4/kaizen/Photos', photo, as('maria'))
+  await status(POST('/odata/v4/kaizen/Photos', photo, as('maria')), 409)
+  await PUT(`/odata/v4/kaizen/Photos(${photoID})/content`, jpeg, { ...as('maria'), headers: { 'content-type': 'image/jpeg' } })
+  const back = await GET(`/odata/v4/kaizen/Photos(${photoID})/content`, { ...as('sam'), responseType: 'arraybuffer' })
+  assert.deepEqual(Buffer.from(back.data), jpeg)
 })

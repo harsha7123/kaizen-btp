@@ -28,6 +28,8 @@ export default class KaizenService extends cds.ApplicationService {
     // ---- create: number + routing ----
     this.before('CREATE', 'Kaizens', async req => {
       const d = req.data
+      // offline capture retries with the ID generated on the phone: 409 tells it the kaizen already arrived
+      if (d.ID && await SELECT.one.from(Kaizens, d.ID).columns('ID')) return req.reject(409, `Kaizen ${d.ID} already exists`)
       const year = new Date().getFullYear()
       const { max } = await SELECT.one.from(Kaizens).columns`max(number) as max`.where`number like ${`KAI-${year}-%`}`
       // ponytail: max+1 can collide under concurrent inserts; use a HANA sequence when volume matters
@@ -103,6 +105,8 @@ export default class KaizenService extends cds.ApplicationService {
 
     // ---- children: no edits after closure; only CI managers verify benefits ----
     this.before(['CREATE', 'UPDATE'], ['Photos', 'Tasks', 'Benefits'], async req => {
+      if (req.event === 'CREATE' && req.data.ID && await SELECT.one.from(req.target, req.data.ID).columns('ID'))
+        return req.reject(409, `${req.target.name.split('.').pop()} ${req.data.ID} already exists`)
       const kaizenID = req.data.kaizen_ID ?? (await SELECT.one.from(req.subject).columns('kaizen_ID'))?.kaizen_ID
       if (!kaizenID) return req.reject(400, 'kaizen_ID is required', 'kaizen_ID')
       const k = await SELECT.one.from(Kaizens, kaizenID).columns('status_code')

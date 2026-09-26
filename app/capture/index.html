@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a6ed1">
+  <title>Kaizen Capture</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    :root {
+      --primary: #0a6ed1; --primary-dark: #0854a0; --ok: #107e3e; --warn: #b95000; --bad: #bb0000;
+      --bg: #f5f6f7; --card: #fff; --text: #1d2d3e; --muted: #556b82; --line: #d9dee3;
+      --on-primary: #fff; --radius: 12px; --tap: 56px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #12171c; --card: #1d232a; --text: #eaecee; --muted: #a9b4be; --line: #33404c; --primary: #4db1ff; --primary-dark: #0854a0; --on-primary: #0b1b2b; --ok: #5dc122; --warn: #ff9a3d; --bad: #ff6b6b; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 17px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+    header { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); background: var(--primary-dark); color: #fff; }
+    header h1 { font-size: 19px; margin: 0; flex: 1; }
+    .pill { font-size: 14px; padding: 4px 10px; border-radius: 99px; background: rgba(255,255,255,.18); white-space: nowrap; }
+    .pill.off { background: #b95000; }
+    main { max-width: 640px; margin: 0 auto; padding: 16px 16px 120px; display: grid; gap: 16px; }
+    section { background: var(--card); border-radius: var(--radius); padding: 16px; border: 1px solid var(--line); }
+    h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 12px; }
+    label { display: block; font-weight: 600; margin: 12px 0 6px; }
+    form { display: grid; gap: 16px; }
+    main > *, form > * { min-width: 0; }
+    input[type=text], input[type=number], textarea { width: 100%; font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-height: var(--tap); }
+    textarea { min-height: 96px; resize: vertical; }
+    input:focus, textarea:focus, button:focus-visible { outline: 3px solid var(--primary); outline-offset: 1px; }
+    button { font: inherit; font-weight: 600; min-height: var(--tap); border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--text); padding: 0 16px; cursor: pointer; }
+    button.primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+    button:disabled { opacity: .5; }
+    .row { display: flex; gap: 8px; align-items: stretch; }
+    .row > input, .row > textarea { flex: 1; }
+    .big { width: 100%; font-size: 19px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .mic { width: var(--tap); flex: none; padding: 0; font-size: 22px; }
+    .mic.on { background: #bb0000; border-color: #bb0000; color: #fff; }
+    .machine { margin-top: 12px; padding: 12px; border-radius: 10px; background: var(--bg); }
+    .machine b { display: block; font-size: 18px; }
+    .machine.unknown { color: var(--warn); }
+    .chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .chips button { padding: 0 4px; font-size: 16px; }
+    .chips button[aria-pressed=true] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+    .chips small { display: block; font-weight: 400; font-size: 11px; line-height: 1.1; }
+    .switch { display: flex; align-items: center; gap: 12px; margin-top: 16px; font-weight: 600; min-height: var(--tap); }
+    .switch input { width: 28px; height: 28px; accent-color: var(--bad); }
+    .photos { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .photos figure { margin: 0; position: relative; }
+    .photos img { width: 96px; height: 96px; object-fit: cover; border-radius: 8px; display: block; }
+    .photos button { position: absolute; top: -8px; right: -8px; min-height: 32px; width: 32px; padding: 0; border-radius: 99px; background: #bb0000; color: #fff; border: 0; }
+    footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom)); background: var(--card); border-top: 1px solid var(--line); }
+    footer button { max-width: 608px; margin: 0 auto; }
+    .list { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+    .item { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 10px; background: var(--bg); }
+    .item .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .item .s { font-size: 14px; font-weight: 600; white-space: nowrap; }
+    .s.pending { color: var(--warn); } .s.error { color: var(--bad); } .s.done { color: var(--ok); }
+    .item button { min-height: 40px; font-size: 14px; }
+    .err { color: var(--bad); font-size: 14px; margin-top: 4px; }
+    #toast { position: fixed; left: 16px; right: 16px; bottom: 96px; max-width: 608px; margin: 0 auto; padding: 14px 16px; border-radius: 10px; background: var(--text); color: var(--bg); font-weight: 600; opacity: 0; transform: translateY(8px); transition: .2s; pointer-events: none; z-index: 5; }
+    #toast.show { opacity: 1; transform: none; }
+    dialog { border: 0; padding: 0; width: 100%; max-width: 100%; height: 100%; max-height: 100%; background: #000; color: #fff; }
+    dialog video { width: 100%; height: calc(100% - 88px); object-fit: cover; }
+    dialog .bar { display: flex; gap: 8px; padding: 16px; }
+    dialog .bar button { flex: 1; }
+    .hint { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
+    .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--line); }
+    .tabs button { border: 0; }
+    .tabs button[aria-selected=true] { background: var(--primary); color: var(--on-primary); }
+    .picks { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+    .picks button { text-align: left; font-weight: 400; padding: 10px 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .picks button b { display: block; }
+    .picks button[aria-pressed=true] { border: 2px solid var(--primary); background: var(--bg); }
+    body.after .new-only, body:not(.after) .after-only { display: none !important; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Kaizen Capture</h1>
+    <span id="net" class="pill">Online</span>
+  </header>
+
+  <main>
+    <section id="mine-section" hidden>
+      <h2>My kaizens on this phone</h2>
+      <div id="mine" class="list"></div>
+    </section>
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tab-new" aria-selected="true">New kaizen</button>
+      <button type="button" role="tab" id="tab-after" aria-selected="false">After photo</button>
+    </div>
+    <form id="form" novalidate>
+      <section>
+        <h2>1 · Machine</h2>
+        <button type="button" id="scan" class="big primary">📷 Scan machine QR</button>
+        <label for="equipment">or type the machine ID</label>
+        <input id="equipment" type="text" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="e.g. P-1042" list="equipment-list">
+        <datalist id="equipment-list"></datalist>
+        <div id="machine" class="machine" hidden></div>
+      </section>
+
+      <section class="after-only">
+        <h2>2 · Which kaizen?</h2>
+        <div id="picks" class="picks"></div>
+        <p id="picks-hint" class="hint">Scan the machine to see its kaizens in progress.</p>
+        <div id="pick-err" class="err" hidden>Please choose the kaizen</div>
+      </section>
+
+      <section>
+        <h2 id="photo-h">2 · Before photo</h2>
+        <button type="button" id="photo-btn" class="big">📸 Take photo</button>
+        <input id="photo" type="file" accept="image/*" capture="environment" hidden>
+        <div id="photos" class="photos"></div>
+        <div id="photo-err" class="err" hidden>Please take the After photo</div>
+      </section>
+
+      <section class="new-only">
+        <h2>3 · What did you see?</h2>
+        <label for="title">Short title *</label>
+        <div class="row">
+          <input id="title" type="text" maxlength="120" placeholder="e.g. Oil leak at pump seal" required>
+          <button type="button" class="mic" data-for="title" aria-label="Speak title">🎤</button>
+        </div>
+        <div id="title-err" class="err" hidden>Please enter a short title</div>
+        <label for="problem">Problem (optional)</label>
+        <div class="row">
+          <textarea id="problem" maxlength="2000" placeholder="What is wrong, where, since when?"></textarea>
+          <button type="button" class="mic" data-for="problem" aria-label="Speak problem">🎤</button>
+        </div>
+        <p id="mic-hint" class="hint" hidden>Tip: use the microphone key on your keyboard to dictate.</p>
+      </section>
+
+      <section class="new-only">
+        <h2>4 · Pillar</h2>
+        <div id="pillars" class="chips" role="group" aria-label="TPM pillar"></div>
+        <div id="pillar-err" class="err" hidden>Please choose a pillar</div>
+        <label class="switch"><input id="safety" type="checkbox"> ⚠️ Safety issue</label>
+        <label for="benefit">Estimated saving, EUR per year (optional)</label>
+        <input id="benefit" type="number" inputmode="decimal" min="0" step="100" placeholder="e.g. 3000">
+      </section>
+    </form>
+
+  </main>
+
+  <footer><button id="submit" class="big primary" form="form" type="submit">Submit kaizen</button></footer>
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="scanner">
+    <video id="video" playsinline muted></video>
+    <div class="bar"><button type="button" id="scan-cancel">Cancel</button></div>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
