@@ -2,6 +2,7 @@
 
 Multi-tenant TPM / Kaizen capture and reporting app on SAP BTP (CAP Node.js).
 
+- **Start here:** [HANDOVER.md](HANDOVER.md) (status, access, setup, demo, open items)
 - Plan and roadmap: [PLAN.md](PLAN.md)
 - Current phase acceptance gates: [GATES.md](GATES.md)
 
