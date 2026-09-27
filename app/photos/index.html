@@ -5,31 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Kaizen Photos</title>
   <!-- ponytail: stop-gap viewer until the Phase 3 Fiori object page shows photos -->
+  <link rel="stylesheet" href="../capture/theme.css">
   <style>
-    :root { --bg: #f5f6f7; --card: #fff; --text: #1d2d3e; --muted: #556b82; --line: #d9dee3; --primary: #0a6ed1; }
-    @media (prefers-color-scheme: dark) { :root { --bg: #12171c; --card: #1d232a; --text: #eaecee; --muted: #a9b4be; --line: #33404c; --primary: #4db1ff; } }
-    * { box-sizing: border-box; }
-    body { margin: 0; font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
-    header { padding: 16px; background: #0854a0; color: #fff; display: flex; align-items: center; gap: 12px; }
-    header h1 { font-size: 20px; margin: 0; flex: 1; }
-    header button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 0; cursor: pointer; }
-    main { max-width: 1100px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
-    article { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
-    article h2 { font-size: 17px; margin: 0 0 4px; }
-    .meta { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+    header { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 12px; padding: 14px 20px;
+      background: color-mix(in srgb, var(--bg) 55%, transparent); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); border-bottom: 1px solid var(--stroke); }
+    header a { color: var(--primary); font-weight: 600; text-decoration: none; }
+    header h1 { font-size: 20px; margin: 0; flex: 1; letter-spacing: -.01em; }
+    main { max-width: 1100px; margin: 0 auto; padding: 20px; display: grid; gap: 16px; }
+    article { padding: 20px; }
+    article h2 { font-size: 18px; margin: 0 0 4px; letter-spacing: -.01em; }
+    .meta { color: var(--muted); font-size: 14px; margin-bottom: 14px; }
     .meta b { color: var(--text); }
-    .photos { display: flex; gap: 12px; flex-wrap: wrap; }
+    .photos { display: flex; gap: 14px; flex-wrap: wrap; }
     figure { margin: 0; }
-    figure img { width: 220px; height: 220px; object-fit: cover; border-radius: 8px; display: block; background: var(--bg); cursor: zoom-in; }
-    figcaption { font-size: 13px; color: var(--muted); margin-top: 4px; }
-    .none { color: var(--muted); font-style: italic; }
+    figure img { width: 220px; height: 220px; object-fit: cover; border-radius: var(--r-md); display: block; background: var(--field); border: 1px solid var(--stroke); cursor: zoom-in; transition: transform .2s var(--ease); }
+    figure img:hover { transform: scale(1.02); }
+    figcaption { font-size: 13px; font-weight: 600; color: var(--muted); margin-top: 6px; }
+    .none { color: var(--muted); }
     dialog { border: 0; padding: 0; background: transparent; max-width: 95vw; max-height: 95vh; }
-    dialog img { max-width: 95vw; max-height: 95vh; display: block; border-radius: 8px; }
-    dialog::backdrop { background: rgba(0,0,0,.85); }
+    dialog img { max-width: 95vw; max-height: 95vh; display: block; border-radius: var(--r-lg); }
+    dialog::backdrop { background: rgba(4, 17, 15, .8); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
   </style>
 </head>
 <body>
-  <header><h1>Kaizen Photos</h1><button id="reload" type="button">Refresh</button></header>
+  <header><a href="../">‹ Kaizen</a><h1>Photo gallery</h1><button id="reload" type="button" class="btn">Refresh</button></header>
   <main id="list"><p class="none">Loading…</p></main>
   <dialog id="big"><img alt=""></dialog>
   <script type="module">
@@ -56,7 +55,7 @@
               return el('figure', {}, img, el('figcaption', { textContent: `${p.kind} · ${new Date(p.createdAt).toLocaleString()}` }))
             }))
           : el('p', { className: 'none', textContent: 'No photos' })
-        return el('article', {}, el('h2', { textContent: `${k.number} · ${k.title}` }), meta, photos)
+        return el('article', { className: 'glass' }, el('h2', { textContent: `${k.number} · ${k.title}` }), meta, photos)
       }))
     }
     document.getElementById('reload').onclick = load

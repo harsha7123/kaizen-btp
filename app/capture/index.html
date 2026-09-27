@@ -3,172 +3,264 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0a6ed1">
+  <meta name="theme-color" content="#0f766e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#04110f" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Kaizen Capture</title>
   <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="theme.css">
   <style>
-    :root {
-      --primary: #0a6ed1; --primary-dark: #0854a0; --ok: #107e3e; --warn: #b95000; --bad: #bb0000;
-      --bg: #f5f6f7; --card: #fff; --text: #1d2d3e; --muted: #556b82; --line: #d9dee3;
-      --on-primary: #fff; --radius: 12px; --tap: 56px;
+    /* ---- app bar ---- */
+    .appbar {
+      position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px;
+      margin: 0 auto; max-width: 680px; padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top));
+      background: color-mix(in srgb, var(--bg) 55%, transparent); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
     }
-    @media (prefers-color-scheme: dark) {
-      :root { --bg: #12171c; --card: #1d232a; --text: #eaecee; --muted: #a9b4be; --line: #33404c; --primary: #4db1ff; --primary-dark: #0854a0; --on-primary: #0b1b2b; --ok: #5dc122; --warn: #ff9a3d; --bad: #ff6b6b; }
-    }
-    * { box-sizing: border-box; }
-    body { margin: 0; font: 17px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
-    header { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); background: var(--primary-dark); color: #fff; }
-    header h1 { font-size: 19px; margin: 0; flex: 1; }
-    .pill { font-size: 14px; padding: 4px 10px; border-radius: 99px; background: rgba(255,255,255,.18); white-space: nowrap; }
-    .pill.off { background: #b95000; }
-    main { max-width: 640px; margin: 0 auto; padding: 16px 16px 120px; display: grid; gap: 16px; }
-    section { background: var(--card); border-radius: var(--radius); padding: 16px; border: 1px solid var(--line); }
-    h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 12px; }
-    label { display: block; font-weight: 600; margin: 12px 0 6px; }
-    form { display: grid; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+    .mark { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; color: #fff;
+      background: linear-gradient(145deg, var(--primary-2), var(--primary)); box-shadow: 0 6px 16px -6px var(--primary); }
+    .brand b { display: block; font-size: 19px; letter-spacing: -.01em; }
+    .brand small { display: block; font-size: 13px; color: var(--muted); margin-top: -2px; }
+
+    main { max-width: 680px; margin: 0 auto; padding: 4px 16px 132px; display: grid; gap: 14px; }
     main > *, form > * { min-width: 0; }
-    input[type=text], input[type=number], textarea { width: 100%; font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-height: var(--tap); }
-    textarea { min-height: 96px; resize: vertical; }
-    input:focus, textarea:focus, button:focus-visible { outline: 3px solid var(--primary); outline-offset: 1px; }
-    button { font: inherit; font-weight: 600; min-height: var(--tap); border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--text); padding: 0 16px; cursor: pointer; }
-    button.primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
-    button:disabled { opacity: .5; }
-    .row { display: flex; gap: 8px; align-items: stretch; }
+    form { display: grid; gap: 14px; }
+
+    /* ---- cards and steps ---- */
+    .card { padding: 18px; }
+    .step { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+    .step .n { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; flex: none;
+      color: var(--primary); background: color-mix(in srgb, var(--primary-2) 18%, transparent); }
+    .sub { font-size: 14px; color: var(--muted); font-weight: 600; margin: 16px 0 8px; display: block; }
+    .hint { color: var(--muted); font-size: 14px; margin: 10px 0 0; }
+    .err { color: var(--bad); font-size: 14px; font-weight: 600; margin-top: 8px; }
+
+    /* ---- fields ---- */
+    input[type=text], input[type=number], textarea {
+      width: 100%; font: inherit; color: inherit; min-height: var(--tap); padding: 14px 16px; border-radius: var(--r-sm);
+      background: var(--field); border: 1px solid var(--stroke); transition: border-color .2s, box-shadow .2s;
+    }
+    textarea { min-height: 104px; resize: vertical; }
+    input:focus, textarea:focus { outline: none; border-color: var(--primary-2); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-2) 22%, transparent); }
+    ::placeholder { color: color-mix(in srgb, var(--muted) 75%, transparent); }
+    .row { display: flex; gap: 10px; align-items: stretch; }
     .row > input, .row > textarea { flex: 1; }
-    .big { width: 100%; font-size: 19px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-    .mic { width: var(--tap); flex: none; padding: 0; font-size: 22px; }
-    .mic.on { background: #bb0000; border-color: #bb0000; color: #fff; }
-    .machine { margin-top: 12px; padding: 12px; border-radius: 10px; background: var(--bg); }
-    .machine b { display: block; font-size: 18px; }
-    .machine.unknown { color: var(--warn); }
+    .mic { width: var(--tap); padding: 0; flex: none; color: var(--primary); }
+    .mic.on { color: #fff; background: var(--bad); border-color: transparent; animation: pulse 1.2s var(--ease) infinite; }
+    @keyframes pulse { 50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--bad) 25%, transparent); } }
+
+    /* ---- machine ---- */
+    .machine { margin-top: 12px; display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: var(--r-md);
+      background: color-mix(in srgb, var(--primary-2) 12%, var(--field)); border: 1px solid color-mix(in srgb, var(--primary-2) 30%, transparent); }
+    .machine .mi { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; color: var(--primary); background: var(--glass-strong); }
+    .machine b { display: block; font-size: 17px; }
+    .machine span { color: var(--muted); font-size: 14px; }
+    .machine.unknown { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+    .machine.unknown .mi, .machine.unknown b { color: var(--accent); }
+
+    /* ---- segmented control (iOS style) ---- */
+    .segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 5px; border-radius: 18px; }
+    .segmented button { font: inherit; font-weight: 600; min-height: 48px; border: 0; border-radius: 14px; background: transparent; color: var(--muted);
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: background .25s var(--ease), color .25s, box-shadow .25s; }
+    .segmented button[aria-selected=true] { color: var(--text); background: var(--glass-strong); box-shadow: 0 1px 2px rgba(15,23,42,.08), 0 6px 16px -8px rgba(15,23,42,.25); }
+
+    /* ---- pillar chips ---- */
     .chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    .chips button { padding: 0 4px; font-size: 16px; }
-    .chips button[aria-pressed=true] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
-    .chips small { display: block; font-weight: 400; font-size: 11px; line-height: 1.1; }
-    .switch { display: flex; align-items: center; gap: 12px; margin-top: 16px; font-weight: 600; min-height: var(--tap); }
-    .switch input { width: 28px; height: 28px; accent-color: var(--bad); }
-    .photos { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .chips button { min-height: 64px; padding: 6px 4px; flex-direction: column; gap: 2px; font-size: 16px; font-weight: 700; border-radius: var(--r-sm); }
+    .chips small { display: block; font-weight: 500; font-size: 11px; line-height: 1.15; color: var(--muted); }
+    .chips button[aria-pressed=true] { color: var(--on-primary); border-color: transparent; background: linear-gradient(180deg, var(--primary-2), var(--primary)); }
+    .chips button[aria-pressed=true] small { color: inherit; opacity: .9; }
+
+    /* ---- iOS toggle for safety ---- */
+    .switch { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 12px 14px; border-radius: var(--r-md);
+      background: var(--field); border: 1px solid var(--stroke); font-weight: 600; min-height: var(--tap); cursor: pointer; }
+    .switch .icon { color: var(--accent); }
+    .switch span { flex: 1; }
+    .switch input { appearance: none; -webkit-appearance: none; width: 52px; height: 32px; border-radius: 99px; margin: 0; flex: none; cursor: pointer;
+      background: color-mix(in srgb, var(--muted) 35%, transparent); position: relative; transition: background .25s var(--ease); }
+    .switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,.25); transition: transform .25s var(--ease); }
+    .switch input:checked { background: var(--accent); }
+    .switch input:checked::after { transform: translateX(20px); }
+
+    /* ---- photos ---- */
+    .photos { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
     .photos figure { margin: 0; position: relative; }
-    .photos img { width: 96px; height: 96px; object-fit: cover; border-radius: 8px; display: block; }
-    .photos button { position: absolute; top: -8px; right: -8px; min-height: 32px; width: 32px; padding: 0; border-radius: 99px; background: #bb0000; color: #fff; border: 0; }
-    footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom)); background: var(--card); border-top: 1px solid var(--line); }
-    footer button { max-width: 608px; margin: 0 auto; }
-    .list { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
-    .item { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 10px; background: var(--bg); }
-    .item .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .item .s { font-size: 14px; font-weight: 600; white-space: nowrap; }
-    .s.pending { color: var(--warn); } .s.error { color: var(--bad); } .s.done { color: var(--ok); }
-    .item button { min-height: 40px; font-size: 14px; }
-    .err { color: var(--bad); font-size: 14px; margin-top: 4px; }
-    #toast { position: fixed; left: 16px; right: 16px; bottom: 96px; max-width: 608px; margin: 0 auto; padding: 14px 16px; border-radius: 10px; background: var(--text); color: var(--bg); font-weight: 600; opacity: 0; transform: translateY(8px); transition: .2s; pointer-events: none; z-index: 5; }
-    #toast.show { opacity: 1; transform: none; }
-    dialog { border: 0; padding: 0; width: 100%; max-width: 100%; height: 100%; max-height: 100%; background: #000; color: #fff; }
-    dialog video { width: 100%; height: calc(100% - 88px); object-fit: cover; }
-    dialog .bar { display: flex; gap: 8px; padding: 16px; }
-    dialog .bar button { flex: 1; }
-    .hint { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
-    #ai-draft { margin-bottom: 12px; border-style: dashed; }
-    .score-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-    .score-head b { font-size: 22px; }
-    .score-head span { color: var(--muted); font-size: 14px; text-align: right; }
-    .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-    .badges span { font-size: 13px; padding: 4px 10px; border-radius: 99px; background: var(--bg); border: 1px solid var(--line); }
-    .top { margin: 10px 0 0; padding-left: 22px; color: var(--muted); font-size: 14px; }
-    .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--line); }
-    .tabs button { border: 0; }
-    .tabs button[aria-selected=true] { background: var(--primary); color: var(--on-primary); }
+    .photos img { width: 104px; height: 104px; object-fit: cover; border-radius: var(--r-md); display: block; border: 1px solid var(--stroke); }
+    .photos button { position: absolute; top: -8px; right: -8px; width: 32px; height: 32px; padding: 0; border-radius: 50%; border: 2px solid var(--bg);
+      background: var(--bad); color: #fff; display: grid; place-items: center; cursor: pointer; }
+    .photos button .icon { width: 16px; height: 16px; }
+
+    /* ---- kaizen picker (After photo) ---- */
     .picks { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
-    .picks button { text-align: left; font-weight: 400; padding: 10px 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .picks button b { display: block; }
-    .picks button[aria-pressed=true] { border: 2px solid var(--primary); background: var(--bg); }
+    .picks button { text-align: left; font: inherit; padding: 12px 16px; border-radius: var(--r-md); cursor: pointer; color: inherit;
+      background: var(--field); border: 1px solid var(--stroke); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .picks button b { display: block; color: var(--primary); }
+    .picks button[aria-pressed=true] { border: 2px solid var(--primary-2); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-2) 18%, transparent); }
+
+    /* ---- my kaizens list ---- */
+    #mine-section h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
+    .list { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+    .item { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 12px 14px; border-radius: var(--r-md); background: var(--field); border: 1px solid var(--stroke); }
+    .item .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+    .item .s { font-size: 13px; font-weight: 700; white-space: nowrap; padding: 4px 10px; border-radius: 99px; }
+    .s.pending { color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
+    .s.error { color: var(--bad); background: color-mix(in srgb, var(--bad) 12%, transparent); white-space: normal; }
+    .s.done { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+    .item .btn { min-height: 40px; padding: 0 12px; font-size: 14px; }
+
+    /* ---- score card ---- */
+    .score { position: relative; overflow: hidden; }
+    .score::after { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; pointer-events: none;
+      background: linear-gradient(135deg, var(--primary-2), var(--accent)); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+    .score-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .score-head .pts { display: flex; align-items: center; gap: 10px; }
+    .score-head .pts .icon { color: var(--accent); }
+    .score-head b { font-size: 26px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    .score-head span { color: var(--muted); font-size: 14px; text-align: right; }
+    .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+    .badges span { font-size: 13px; font-weight: 600; padding: 5px 11px; border-radius: 99px; background: var(--field); border: 1px solid var(--stroke); }
+    .top { margin: 12px 0 0; padding-left: 22px; color: var(--muted); font-size: 14px; }
+
+    /* ---- AI ---- */
+    #ai-draft { width: 100%; margin-bottom: 4px; }
+    #ai-draft .icon { color: var(--accent); }
+
+    /* ---- bottom action bar ---- */
+    footer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom));
+      background: color-mix(in srgb, var(--bg) 60%, transparent); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); border-top: 1px solid var(--stroke); }
+    footer .btn { display: flex; max-width: 648px; margin: 0 auto; }
+
+    /* ---- toast ---- */
+    #toast { position: fixed; left: 16px; right: 16px; bottom: calc(96px + env(safe-area-inset-bottom)); max-width: 520px; margin: 0 auto; z-index: 20;
+      padding: 14px 18px; border-radius: 18px; font-weight: 600; text-align: center; color: #fff;
+      background: rgba(15, 23, 42, .82); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+      opacity: 0; transform: translateY(10px) scale(.98); transition: opacity .2s var(--ease), transform .25s var(--ease); pointer-events: none; }
+    #toast.show { opacity: 1; transform: none; }
+
+    /* ---- scanner ---- */
+    dialog { border: 0; padding: 0; width: 100%; max-width: 100%; height: 100%; max-height: 100%; background: #000; color: #fff; }
+    dialog::backdrop { background: #000; }
+    dialog video { width: 100%; height: 100%; object-fit: cover; }
+    .frame { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+    .frame div { width: min(68vw, 300px); aspect-ratio: 1; border-radius: 28px; box-shadow: 0 0 0 100vmax rgba(0,0,0,.45); border: 3px solid rgba(255,255,255,.9); }
+    .frame p { position: absolute; top: calc(50% + min(34vw, 150px) + 20px); margin: 0; font-weight: 600; }
+    dialog .bar { position: absolute; left: 16px; right: 16px; bottom: max(24px, env(safe-area-inset-bottom)); }
+    dialog .bar .btn { width: 100%; color: #fff; background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.25); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+
     body.after .new-only, body:not(.after) .after-only { display: none !important; }
     [hidden] { display: none !important; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Kaizen Capture</h1>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-logo" viewBox="0 0 24 24"><path d="M12 2.5 20.2 7v10L12 21.5 3.8 17V7z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol>
+    <symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10M12 8v4M12 16h.01"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4ZM22 2 11 13"/></symbol>
+    <symbol id="i-factory" viewBox="0 0 24 24"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2ZM17 18h1M12 18h1M7 18h1"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.7V17c0 .6-.5 1-1 1.2C7.9 18.8 7 20.2 7 22M14 14.7V17c0 .6.5 1 1 1.2 1.1.6 2 2 2 3.8M18 2H6v7a6 6 0 0 0 12 0Z"/></symbol>
+  </svg>
+
+  <header class="appbar">
+    <div class="brand">
+      <div class="mark"><svg class="icon"><use href="#i-logo"/></svg></div>
+      <div><b>Kaizen</b><small>Capture</small></div>
+    </div>
     <span id="net" class="pill">Online</span>
   </header>
 
   <main>
-    <section id="score-section" class="score" hidden>
-      <div class="score-head"><b id="score-points"></b><span id="score-rank"></span></div>
+    <section id="score-section" class="score glass card" hidden>
+      <div class="score-head">
+        <div class="pts"><svg class="icon lg"><use href="#i-trophy"/></svg><b id="score-points"></b></div>
+        <span id="score-rank"></span>
+      </div>
       <div id="score-badges" class="badges"></div>
       <ol id="score-top" class="top"></ol>
     </section>
-    <section id="mine-section" hidden>
+
+    <section id="mine-section" class="glass card" hidden>
       <h2>My kaizens on this phone</h2>
       <div id="mine" class="list"></div>
     </section>
-    <div class="tabs" role="tablist">
-      <button type="button" role="tab" id="tab-new" aria-selected="true">New kaizen</button>
-      <button type="button" role="tab" id="tab-after" aria-selected="false">After photo</button>
+
+    <div class="segmented glass" role="tablist" aria-label="What do you want to do?">
+      <button type="button" role="tab" id="tab-new" aria-selected="true"><svg class="icon"><use href="#i-plus"/></svg>New kaizen</button>
+      <button type="button" role="tab" id="tab-after" aria-selected="false"><svg class="icon"><use href="#i-image"/></svg>After photo</button>
     </div>
+
     <form id="form" novalidate>
-      <section>
-        <h2>1 · Machine</h2>
-        <button type="button" id="scan" class="big primary">📷 Scan machine QR</button>
-        <label for="equipment">or type the machine ID</label>
+      <section class="glass card">
+        <h2 class="step"><span class="n">1</span>Machine</h2>
+        <button type="button" id="scan" class="btn primary block"><svg class="icon"><use href="#i-scan"/></svg><span class="label">Scan machine QR</span></button>
+        <label class="sub" for="equipment">or type the machine ID</label>
         <input id="equipment" type="text" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="e.g. P-1042" list="equipment-list">
         <datalist id="equipment-list"></datalist>
         <div id="machine" class="machine" hidden></div>
         <div id="equipment-err" class="err" hidden>Scan or type a known machine ID</div>
       </section>
 
-      <section class="after-only">
-        <h2>2 · Which kaizen?</h2>
+      <section class="glass card after-only">
+        <h2 class="step"><span class="n">2</span>Which kaizen?</h2>
         <div id="picks" class="picks"></div>
         <p id="picks-hint" class="hint">Scan the machine to see its kaizens in progress.</p>
         <div id="pick-err" class="err" hidden>Please choose the kaizen</div>
       </section>
 
-      <section>
-        <h2 id="photo-h">2 · Before photo</h2>
-        <button type="button" id="photo-btn" class="big">📸 Take photo</button>
+      <section class="glass card">
+        <h2 class="step"><span class="n" id="photo-n">2</span><span id="photo-h">Before photo</span></h2>
+        <button type="button" id="photo-btn" class="btn block"><svg class="icon"><use href="#i-camera"/></svg><span class="label">Take photo</span></button>
         <input id="photo" type="file" accept="image/*" capture="environment" hidden>
         <div id="photos" class="photos"></div>
         <div id="photo-err" class="err" hidden>Please take the After photo</div>
       </section>
 
-      <section class="new-only">
-        <h2>3 · What did you see?</h2>
-        <button type="button" id="ai-draft" class="big" hidden>✨ Draft with AI from the photo</button>
+      <section class="glass card new-only">
+        <h2 class="step"><span class="n">3</span>What did you see?</h2>
+        <button type="button" id="ai-draft" class="btn ghost" hidden><svg class="icon"><use href="#i-sparkles"/></svg><span class="label">Draft with AI from the photo</span></button>
         <p id="ai-note" class="hint" hidden>AI draft: please check and correct before submitting.</p>
-        <label for="title">Short title *</label>
+        <label class="sub" for="title">Short title *</label>
         <div class="row">
           <input id="title" type="text" maxlength="120" placeholder="e.g. Oil leak at pump seal" required>
-          <button type="button" class="mic" data-for="title" aria-label="Speak title">🎤</button>
+          <button type="button" class="btn mic" data-for="title" aria-label="Speak title"><svg class="icon"><use href="#i-mic"/></svg></button>
         </div>
         <div id="title-err" class="err" hidden>Please enter a short title</div>
-        <label for="problem">Problem (optional)</label>
+        <label class="sub" for="problem">Problem (optional)</label>
         <div class="row">
           <textarea id="problem" maxlength="2000" placeholder="What is wrong, where, since when?"></textarea>
-          <button type="button" class="mic" data-for="problem" aria-label="Speak problem">🎤</button>
+          <button type="button" class="btn mic" data-for="problem" aria-label="Speak problem"><svg class="icon"><use href="#i-mic"/></svg></button>
         </div>
         <p id="mic-hint" class="hint" hidden>Tip: use the microphone key on your keyboard to dictate.</p>
       </section>
 
-      <section class="new-only">
-        <h2>4 · Pillar</h2>
+      <section class="glass card new-only">
+        <h2 class="step"><span class="n">4</span>Pillar</h2>
         <div id="pillars" class="chips" role="group" aria-label="TPM pillar"></div>
         <div id="pillar-err" class="err" hidden>Please choose a pillar</div>
-        <label class="switch"><input id="safety" type="checkbox"> ⚠️ Safety issue</label>
-        <label for="benefit">Estimated saving, EUR per year (optional)</label>
+        <label class="switch"><svg class="icon"><use href="#i-shield"/></svg><span>Safety issue</span><input id="safety" type="checkbox"></label>
+        <label class="sub" for="benefit">Estimated saving, EUR per year (optional)</label>
         <input id="benefit" type="number" inputmode="decimal" min="0" step="100" placeholder="e.g. 3000">
       </section>
     </form>
-
   </main>
 
-  <footer><button id="submit" class="big primary" form="form" type="submit">Submit kaizen</button></footer>
+  <footer><button id="submit" class="btn primary block" form="form" type="submit"><svg class="icon"><use href="#i-send"/></svg><span class="label">Submit kaizen</span></button></footer>
   <div id="toast" role="status" aria-live="polite"></div>
 
   <dialog id="scanner">
     <video id="video" playsinline muted></video>
-    <div class="bar"><button type="button" id="scan-cancel">Cancel</button></div>
+    <div class="frame"><div></div><p>Point at the machine's QR label</p></div>
+    <div class="bar"><button type="button" id="scan-cancel" class="btn">Cancel</button></div>
   </dialog>
 
   <script type="module" src="app.js"></script>

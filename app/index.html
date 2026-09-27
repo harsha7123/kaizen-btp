@@ -2,34 +2,97 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#04110f" media="(prefers-color-scheme: dark)">
   <title>Kaizen</title>
   <link rel="icon" href="capture/icon.svg" type="image/svg+xml">
-  <!-- ponytail: plain start page; SAP Build Work Zone replaces it on BTP (Phase 6) -->
+  <link rel="stylesheet" href="capture/theme.css">
+  <!-- ponytail: plain start page; SAP Build Work Zone replaces it on BTP when the customer wants a launchpad -->
   <style>
-    :root { --bg: #f5f6f7; --card: #fff; --text: #1d2d3e; --muted: #556b82; --line: #d9dee3; --primary: #0a6ed1; }
-    @media (prefers-color-scheme: dark) { :root { --bg: #12171c; --card: #1d232a; --text: #eaecee; --muted: #a9b4be; --line: #33404c; --primary: #4db1ff; } }
-    * { box-sizing: border-box; }
-    body { margin: 0; font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
-    header { padding: 20px 16px; background: #0854a0; color: #fff; }
-    header h1 { margin: 0 auto; max-width: 960px; font-size: 22px; }
-    main { max-width: 960px; margin: 0 auto; padding: 24px 16px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
-    a { display: flex; flex-direction: column; gap: 6px; min-height: 150px; padding: 20px; border-radius: 12px; background: var(--card);
-        border: 1px solid var(--line); color: inherit; text-decoration: none; transition: border-color .15s, transform .15s; }
-    a:hover, a:focus-visible { border-color: var(--primary); transform: translateY(-2px); outline: none; }
-    .icon { font-size: 32px; }
-    b { font-size: 18px; }
-    span { color: var(--muted); font-size: 14px; }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: max(28px, env(safe-area-inset-top)) 20px 48px; }
+    .top { display: flex; align-items: center; gap: 14px; margin-bottom: 36px; }
+    .mark { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff;
+      background: linear-gradient(145deg, var(--primary-2), var(--primary)); box-shadow: 0 10px 24px -10px var(--primary); }
+    .top b { font-size: 22px; letter-spacing: -.02em; }
+    .top small { display: block; color: var(--muted); font-size: 14px; }
+    h1 { font-size: clamp(30px, 6vw, 46px); line-height: 1.08; letter-spacing: -.03em; margin: 0 0 10px; }
+    h1 em { font-style: normal; background: linear-gradient(90deg, var(--primary), var(--primary-2) 45%, var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .lead { color: var(--muted); font-size: 18px; margin: 0 0 32px; max-width: 560px; }
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+    .tile { display: flex; flex-direction: column; gap: 10px; min-height: 176px; padding: 22px; color: inherit; text-decoration: none;
+      transition: transform .25s var(--ease), box-shadow .25s var(--ease); }
+    .tile:hover { transform: translateY(-3px); box-shadow: inset 0 1px 0 var(--edge), 0 24px 48px -20px rgba(15, 23, 42, .35); }
+    .tile:active { transform: scale(.98); }
+    .tile .ic { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; color: #fff; margin-bottom: 6px; }
+    .tile b { font-size: 19px; letter-spacing: -.01em; }
+    .tile span { color: var(--muted); font-size: 15px; }
+    .tile .go { margin-top: auto; font-weight: 600; font-size: 14px; color: var(--primary); display: flex; align-items: center; gap: 6px; }
+    .tile.hero { grid-column: span 2; background: linear-gradient(135deg, #115e59, #0f766e 55%, #0d9488); color: #fff; } /* fixed deep teal: white text >= 4.5:1 in both modes */
+    .tile.hero span, .tile.hero .go { color: rgba(255, 255, 255, .88); }
+    .tile.hero .ic { background: rgba(255, 255, 255, .22); }
+    @media (max-width: 560px) { .tile.hero { grid-column: auto; } }
+    .c1 { background: linear-gradient(145deg, #14b8a6, #0f766e); }
+    .c2 { background: linear-gradient(145deg, #38bdf8, #0369a1); }
+    .c3 { background: linear-gradient(145deg, #fb923c, #c2410c); }
+    .c4 { background: linear-gradient(145deg, #a78bfa, #6d28d9); }
+    footer { margin-top: 36px; color: var(--muted); font-size: 13px; text-align: center; }
   </style>
 </head>
 <body>
-  <header><h1>Kaizen</h1></header>
-  <main>
-    <a href="capture/"><div class="icon">📷</div><b>Capture</b><span>Report a kaizen at the machine. Works offline. For operators.</span></a>
-    <a href="kaizens/index.html"><div class="icon">✅</div><b>Manage Kaizens</b><span>Your inbox, approvals, tasks, benefits and closing.</span></a>
-    <a href="kpis/index.html"><div class="icon">📊</div><b>KPIs</b><span>Kaizens, cycle time and verified savings by plant and pillar.</span></a>
-    <a href="leaderboard/index.html"><div class="icon">🏆</div><b>Leaderboard</b><span>Points and badges per person and plant.</span></a>
-    <a href="photos/"><div class="icon">🖼️</div><b>Photo gallery</b><span>All kaizens with their Before and After photos.</span></a>
-  </main>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-logo" viewBox="0 0 24 24"><path d="M12 2.5 20.2 7v10L12 21.5 3.8 17V7z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15v2M11 11v6M15 7v10M19 12v5"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.7V17c0 .6-.5 1-1 1.2C7.9 18.8 7 20.2 7 22M14 14.7V17c0 .6.5 1 1 1.2 1.1.6 2 2 2 3.8M18 2H6v7a6 6 0 0 0 12 0Z"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  </svg>
+
+  <div class="wrap">
+    <div class="top">
+      <div class="mark"><svg class="icon lg"><use href="#i-logo"/></svg></div>
+      <div><b>Kaizen</b><small>Continuous improvement on SAP BTP</small></div>
+    </div>
+
+    <h1>Small ideas,<br><em>verified savings.</em></h1>
+    <p class="lead">Report at the machine, approve in one click, close only with proof.</p>
+
+    <main class="grid">
+      <a class="tile hero glass" href="capture/">
+        <div class="ic"><svg class="icon lg"><use href="#i-camera"/></svg></div>
+        <b>Capture</b>
+        <span>Report a kaizen at the machine in under a minute. Scan, photo, submit. Works offline.</span>
+        <div class="go">Open <svg class="icon"><use href="#i-arrow"/></svg></div>
+      </a>
+      <a class="tile glass" href="kaizens/index.html">
+        <div class="ic c1"><svg class="icon lg"><use href="#i-check"/></svg></div>
+        <b>Manage Kaizens</b>
+        <span>Your inbox, approvals, tasks, benefits and closing.</span>
+        <div class="go">Open <svg class="icon"><use href="#i-arrow"/></svg></div>
+      </a>
+      <a class="tile glass" href="kpis/index.html">
+        <div class="ic c2"><svg class="icon lg"><use href="#i-chart"/></svg></div>
+        <b>KPIs</b>
+        <span>Kaizens, cycle time and verified savings by plant and pillar.</span>
+        <div class="go">Open <svg class="icon"><use href="#i-arrow"/></svg></div>
+      </a>
+      <a class="tile glass" href="leaderboard/index.html">
+        <div class="ic c3"><svg class="icon lg"><use href="#i-trophy"/></svg></div>
+        <b>Leaderboard</b>
+        <span>Points and badges per person and plant.</span>
+        <div class="go">Open <svg class="icon"><use href="#i-arrow"/></svg></div>
+      </a>
+      <a class="tile glass" href="photos/">
+        <div class="ic c4"><svg class="icon lg"><use href="#i-image"/></svg></div>
+        <b>Photo gallery</b>
+        <span>Every kaizen with its Before and After photos.</span>
+        <div class="go">Open <svg class="icon"><use href="#i-arrow"/></svg></div>
+      </a>
+    </main>
+
+    <footer>Kaizen · TPM continuous improvement</footer>
+  </div>
 </body>
 </html>

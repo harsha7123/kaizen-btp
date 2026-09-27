@@ -163,7 +163,7 @@ try {
 
   // 7. gamification on the phone: reported 10 + approved 10 + closed 30 + 14 x 1,000 EUR verified = 64 points
   await maria.goto(`${BASE}/capture/`)
-  await maria.locator('#score-points', { hasText: '⭐ 64 points' }).waitFor({ timeout: 15000 })
+  await maria.locator('#score-points', { hasText: '64 points' }).waitFor({ timeout: 15000 })
   check((await maria.textContent('#score-badges')).includes('10k saver'), 'badge missing on the phone')
   step('maria sees 64 points and her badges on the phone')
 

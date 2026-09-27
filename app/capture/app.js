@@ -3,6 +3,7 @@
 // gets 409 from the server instead of creating a duplicate.
 const API = '/odata/v4/kaizen'
 const $ = id => document.getElementById(id)
+const label = (id, text) => { $(id).querySelector('.label').textContent = text } // buttons keep their icon
 const state = { mode: 'new', photos: [], pillar: null, pick: null, equipment: [], plants: [], open: [], syncing: false, aiDrafted: false }
 
 // ---- IndexedDB queue ----
@@ -112,7 +113,7 @@ function apply ({ equipment, plants, pillars, open = [] }) {
   $('equipment-list').replaceChildren(...equipment.map(e => new Option(e.name, e.ID)))
   $('pillars').replaceChildren(...pillars.map(p => {
     const b = document.createElement('button')
-    b.type = 'button'; b.dataset.code = p.code; b.setAttribute('aria-pressed', p.code === state.pillar)
+    b.type = 'button'; b.className = 'btn'; b.dataset.code = p.code; b.setAttribute('aria-pressed', p.code === state.pillar)
     b.innerHTML = `${p.code}<small>${p.name.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</small>`
     b.onclick = () => { state.pillar = p.code; $('pillar-err').hidden = true; for (const x of $('pillars').children) x.setAttribute('aria-pressed', x === b) }
     return b
@@ -151,7 +152,7 @@ function showMachine () {
   if (id && !e) resolveMachine(id)
   box.hidden = !id
   box.classList.toggle('unknown', !e)
-  box.innerHTML = e ? `<b></b><span></span>` : `<b>Unknown machine</b><span>Check the ID or scan again</span>`
+  box.innerHTML = `<div class="mi"><svg class="icon"><use href="#i-factory"/></svg></div><div><b>Unknown machine</b><span>Check the ID or scan again</span></div>`
   if (e) { box.querySelector('b').textContent = e.name; box.querySelector('span').textContent = `${e.plantName} · ${e.workCenter_ID ?? ''}` }
   renderPicks(id)
 }
@@ -173,8 +174,9 @@ function setMode (mode) {
   document.body.classList.toggle('after', mode === 'after')
   $('tab-new').setAttribute('aria-selected', mode === 'new')
   $('tab-after').setAttribute('aria-selected', mode === 'after')
-  $('photo-h').textContent = mode === 'after' ? '3 · After photo' : '2 · Before photo'
-  $('submit').textContent = mode === 'after' ? 'Save After photo' : 'Submit kaizen'
+  $('photo-n').textContent = mode === 'after' ? '3' : '2'
+  $('photo-h').textContent = mode === 'after' ? 'After photo' : 'Before photo'
+  label('submit', mode === 'after' ? 'Save After photo' : 'Submit kaizen')
   showMachine(); aiVisible()
 }
 
@@ -229,12 +231,12 @@ function renderPhotos () {
   $('photos').replaceChildren(...state.photos.map(p => {
     const f = document.createElement('figure'), img = new Image(), x = document.createElement('button')
     img.src = p.url; img.alt = state.mode === 'after' ? 'After photo' : 'Before photo'
-    x.type = 'button'; x.textContent = '✕'; x.setAttribute('aria-label', 'Remove photo')
+    x.type = 'button'; x.innerHTML = '<svg class="icon"><use href="#i-x"/></svg>'; x.setAttribute('aria-label', 'Remove photo')
     x.onclick = () => { URL.revokeObjectURL(p.url); state.photos = state.photos.filter(q => q !== p); renderPhotos() }
     f.append(img, x)
     return f
   }))
-  $('photo-btn').textContent = state.photos.length ? '📸 Add another photo' : '📸 Take photo'
+  label('photo-btn', state.photos.length ? 'Add another photo' : 'Take photo')
   aiVisible()
 }
 
@@ -244,7 +246,7 @@ const toBase64 = blob => new Promise(ok => { const r = new FileReader(); r.onloa
 const knownMachine = () => { const id = $('equipment').value.trim().toUpperCase(); return state.equipment.some(e => e.ID === id) ? id : null }
 async function aiDraft () {
   const btn = $('ai-draft')
-  btn.disabled = true; btn.textContent = '✨ Drafting…'
+  btn.disabled = true; label('ai-draft', 'Drafting…')
   try {
     const image = await toBase64(await shrink(state.photos[0].blob, 768))
     const d = await send('POST', '/draftFromPhoto', { image, equipment_ID: knownMachine(), hint: $('title').value.trim() || null })
@@ -256,7 +258,7 @@ async function aiDraft () {
     $('ai-note').hidden = false; $('title-err').hidden = true
   } catch (e) {
     toast(e instanceof Retry ? 'The AI assistant is not available right now' : e.message)
-  } finally { btn.disabled = false; btn.textContent = '✨ Draft with AI from the photo' }
+  } finally { btn.disabled = false; label('ai-draft', 'Draft with AI from the photo') }
 }
 const literal = s => `'${encodeURIComponent((s ?? '').replace(/'/g, "''"))}'`
 async function looksLikeDuplicate (title, problem, equipment) {
@@ -344,7 +346,7 @@ async function afterSubmit () {
 async function render () {
   const pending = (await queue.all()).sort((a, b) => b.createdAt - a.createdAt)
   const rows = [
-    ...pending.map(p => ({ title: p.data.title, s: p.error ? 'error' : 'pending', label: p.error ? `⚠ ${p.error}` : 'Waiting to send', ID: p.ID, error: p.error })),
+    ...pending.map(p => ({ title: p.data.title, s: p.error ? 'error' : 'pending', label: p.error ? `Not sent: ${p.error}` : 'Waiting to send', ID: p.ID, error: p.error })),
     ...done.all().slice(0, 3).map(d => ({ title: d.title, s: 'done', label: `${d.number} · sent` }))
   ]
   $('mine-section').hidden = !rows.length
@@ -356,7 +358,7 @@ async function render () {
     div.append(t, s)
     if (r.error) {
       const del = document.createElement('button')
-      del.type = 'button'; del.textContent = 'Delete'
+      del.type = 'button'; del.className = 'btn'; del.textContent = 'Delete'
       del.onclick = async () => { if (confirm(`Delete "${r.title}" from this phone?`)) { await queue.remove(r.ID); render() } }
       div.append(del)
     }
@@ -374,7 +376,7 @@ async function loadScore () {
   if (navigator.onLine) try { s = await send('GET', '/myScore()'); localStorage.setItem('kaizen-score', JSON.stringify(s)) } catch { /* keep cached */ }
   if (!s || !s.points) return
   $('score-section').hidden = false
-  $('score-points').textContent = `⭐ ${s.points} points`
+  $('score-points').textContent = `${s.points} points`
   $('score-rank').textContent = s.rank ? `#${s.rank} of ${s.outOf} in ${s.plantName}` : ''
   $('score-badges').replaceChildren(...s.badges.map(b => Object.assign(document.createElement('span'), { textContent: b })))
   $('score-top').replaceChildren(...s.top.map(t => Object.assign(document.createElement('li'), { textContent: `${t.name} · ${t.points}` })))
