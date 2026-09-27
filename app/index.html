@@ -3,40 +3,37 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0f766e" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#04110f" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f5f6f8">
   <title>Kaizen</title>
   <link rel="icon" href="capture/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="capture/theme.css">
   <!-- ponytail: plain start page; SAP Build Work Zone replaces it on BTP when the customer wants a launchpad -->
   <style>
-    .wrap { max-width: 1040px; margin: 0 auto; padding: max(28px, env(safe-area-inset-top)) 20px 48px; }
-    .top { display: flex; align-items: center; gap: 14px; margin-bottom: 36px; }
-    .mark { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff;
-      background: linear-gradient(145deg, var(--primary-2), var(--primary)); box-shadow: 0 10px 24px -10px var(--primary); }
-    .top b { font-size: 22px; letter-spacing: -.02em; }
-    .top small { display: block; color: var(--muted); font-size: 14px; }
-    h1 { font-size: clamp(30px, 6vw, 46px); line-height: 1.08; letter-spacing: -.03em; margin: 0 0 10px; }
-    h1 em { font-style: normal; background: linear-gradient(90deg, var(--primary), var(--primary-2) 45%, var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .lead { color: var(--muted); font-size: 18px; margin: 0 0 32px; max-width: 560px; }
-    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
-    .tile { display: flex; flex-direction: column; gap: 10px; min-height: 176px; padding: 22px; color: inherit; text-decoration: none;
+    .wrap { max-width: 1080px; margin: 0 auto; padding: max(32px, env(safe-area-inset-top)) 24px 56px; }
+    .top { display: flex; align-items: center; gap: 12px; margin-bottom: 44px; }
+    .mark { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; color: #fff; background: var(--primary); }
+    .top b { font-size: 18px; letter-spacing: -.01em; }
+    .top small { display: block; color: var(--muted); font-size: 13px; }
+    h1 { font-size: clamp(30px, 5vw, 42px); line-height: 1.1; letter-spacing: -.025em; font-weight: 700; margin: 0 0 10px; }
+    .lead { color: var(--muted); font-size: 18px; margin: 0 0 36px; max-width: 560px; }
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+    .tile { display: flex; flex-direction: column; gap: 8px; min-height: 184px; padding: 22px; color: inherit; text-decoration: none;
       transition: transform .25s var(--ease), box-shadow .25s var(--ease); }
-    .tile:hover { transform: translateY(-3px); box-shadow: inset 0 1px 0 var(--edge), 0 24px 48px -20px rgba(15, 23, 42, .35); }
-    .tile:active { transform: scale(.98); }
-    .tile .ic { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; color: #fff; margin-bottom: 6px; }
-    .tile b { font-size: 19px; letter-spacing: -.01em; }
+    .tile:hover { transform: translateY(-2px); box-shadow: inset 0 1px 0 var(--edge), var(--shadow-hover); }
+    .tile:active { transform: scale(.99); }
+    .tile .ic { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; margin-bottom: 8px; }
+    .tile b { font-size: 18px; letter-spacing: -.01em; }
     .tile span { color: var(--muted); font-size: 15px; }
-    .tile .go { margin-top: auto; font-weight: 600; font-size: 14px; color: var(--primary); display: flex; align-items: center; gap: 6px; }
-    .tile.hero { grid-column: span 2; background: linear-gradient(135deg, #115e59, #0f766e 55%, #0d9488); color: #fff; } /* fixed deep teal: white text >= 4.5:1 in both modes */
-    .tile.hero span, .tile.hero .go { color: rgba(255, 255, 255, .88); }
-    .tile.hero .ic { background: rgba(255, 255, 255, .22); }
-    @media (max-width: 560px) { .tile.hero { grid-column: auto; } }
-    .c1 { background: linear-gradient(145deg, #14b8a6, #0f766e); }
-    .c2 { background: linear-gradient(145deg, #38bdf8, #0369a1); }
-    .c3 { background: linear-gradient(145deg, #fb923c, #c2410c); }
-    .c4 { background: linear-gradient(145deg, #a78bfa, #6d28d9); }
-    footer { margin-top: 36px; color: var(--muted); font-size: 13px; text-align: center; }
+    .tile .go { margin-top: auto; padding-top: 8px; font-weight: 600; font-size: 14px; color: var(--primary); display: flex; align-items: center; gap: 6px; }
+    .tile.hero { grid-column: span 2; }
+    .tile.hero .tag { align-self: flex-start; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--primary); background: var(--tint); padding: 4px 10px; border-radius: 99px; }
+    @media (max-width: 600px) { .tile.hero { grid-column: auto; } }
+    .c1 { color: #0070f2; background: #ebf3fe; }
+    .c2 { color: #107e3e; background: #e9f6ee; }
+    .c3 { color: #0e7490; background: #e6f6fa; }
+    .c4 { color: #c35500; background: #fff3e8; }
+    .c5 { color: #6d4ed8; background: #f1edfd; }
+    footer { margin-top: 40px; color: var(--muted); font-size: 13px; text-align: center; }
   </style>
 </head>
 <body>
@@ -56,36 +53,36 @@
       <div><b>Kaizen</b><small>Continuous improvement on SAP BTP</small></div>
     </div>
 
-    <h1>Small ideas,<br><em>verified savings.</em></h1>
+    <h1>Small ideas. Verified savings.</h1>
     <p class="lead">Report at the machine, approve in one click, close only with proof.</p>
 
     <main class="grid">
       <a class="tile hero glass" href="capture/">
-        <div class="ic"><svg class="icon lg"><use href="#i-camera"/></svg></div>
+        <div class="ic c1"><svg class="icon lg"><use href="#i-camera"/></svg></div>
         <b>Capture</b>
         <span>Report a kaizen at the machine in under a minute. Scan, photo, submit. Works offline.</span>
         <div class="go">Open <svg class="icon"><use href="#i-arrow"/></svg></div>
       </a>
       <a class="tile glass" href="kaizens/index.html">
-        <div class="ic c1"><svg class="icon lg"><use href="#i-check"/></svg></div>
+        <div class="ic c2"><svg class="icon lg"><use href="#i-check"/></svg></div>
         <b>Manage Kaizens</b>
         <span>Your inbox, approvals, tasks, benefits and closing.</span>
         <div class="go">Open <svg class="icon"><use href="#i-arrow"/></svg></div>
       </a>
       <a class="tile glass" href="kpis/index.html">
-        <div class="ic c2"><svg class="icon lg"><use href="#i-chart"/></svg></div>
+        <div class="ic c3"><svg class="icon lg"><use href="#i-chart"/></svg></div>
         <b>KPIs</b>
         <span>Kaizens, cycle time and verified savings by plant and pillar.</span>
         <div class="go">Open <svg class="icon"><use href="#i-arrow"/></svg></div>
       </a>
       <a class="tile glass" href="leaderboard/index.html">
-        <div class="ic c3"><svg class="icon lg"><use href="#i-trophy"/></svg></div>
+        <div class="ic c4"><svg class="icon lg"><use href="#i-trophy"/></svg></div>
         <b>Leaderboard</b>
         <span>Points and badges per person and plant.</span>
         <div class="go">Open <svg class="icon"><use href="#i-arrow"/></svg></div>
       </a>
       <a class="tile glass" href="photos/">
-        <div class="ic c4"><svg class="icon lg"><use href="#i-image"/></svg></div>
+        <div class="ic c5"><svg class="icon lg"><use href="#i-image"/></svg></div>
         <b>Photo gallery</b>
         <span>Every kaizen with its Before and After photos.</span>
         <div class="go">Open <svg class="icon"><use href="#i-arrow"/></svg></div>

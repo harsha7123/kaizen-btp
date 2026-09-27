@@ -88,7 +88,7 @@ try {
   await statusIs(klaus, 'Approved')
   await run(klaus, 'Start', { 'Owner': 'klaus' })
   await statusIs(klaus, 'In Progress')
-  await run(klaus, '✨ 5-Why analysis')
+  await run(klaus, '5-Why analysis')
   await klaus.locator('[id$="fe::FacetSection::analysis"]').scrollIntoViewIfNeeded()
   await klaus.getByText(/^1. Why/).first().waitFor({ state: 'attached', timeout: 15000 }) // long text is shown collapsed
   await editAndSave(klaus, async () => {
@@ -144,7 +144,7 @@ try {
   step('klaus added the After photo, finished the task and closed the kaizen')
 
   // A3 report: generated from the kaizen data, printable with Before and After photos
-  await run(klaus, '✨ Generate A3')
+  await run(klaus, 'Generate A3')
   await klaus.waitForTimeout(1500)
   const id = decodeURIComponent(klaus.url()).match(/ID=([0-9a-f-]{36})/)[1]
   await klaus.goto(`${BASE}/a3/index.html?ID=${id}`)

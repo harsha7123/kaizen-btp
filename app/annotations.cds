@@ -87,8 +87,8 @@ annotate s.Kaizens with @(
     { $Type: 'UI.DataFieldForAction', Action: 'ManageService.start', Label: 'Start' },
     { $Type: 'UI.DataFieldForAction', Action: 'ManageService.requestVerification', Label: 'Request verification' },
     { $Type: 'UI.DataFieldForAction', Action: 'ManageService.close', Label: 'Close kaizen' },
-    { $Type: 'UI.DataFieldForAction', Action: 'ManageService.fiveWhy', Label: '✨ 5-Why analysis' },
-    { $Type: 'UI.DataFieldForAction', Action: 'ManageService.generateA3', Label: '✨ Generate A3' },
+    { $Type: 'UI.DataFieldForAction', Action: 'ManageService.fiveWhy', Label: '5-Why analysis' },
+    { $Type: 'UI.DataFieldForAction', Action: 'ManageService.generateA3', Label: 'Generate A3' },
     { $Type: 'UI.DataFieldForAction', Action: 'ManageService.deployTo', Label: 'Deploy to another machine' }
   ],
   UI.HeaderFacets: [{ $Type: 'UI.ReferenceFacet', Target: '@UI.FieldGroup#Workflow' }],

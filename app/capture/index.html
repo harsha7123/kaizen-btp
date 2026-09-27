@@ -3,10 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0f766e" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#04110f" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f5f6f8">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>Kaizen Capture</title>
   <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -20,8 +19,7 @@
       background: color-mix(in srgb, var(--bg) 55%, transparent); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
     }
     .brand { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
-    .mark { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; color: #fff;
-      background: linear-gradient(145deg, var(--primary-2), var(--primary)); box-shadow: 0 6px 16px -6px var(--primary); }
+    .mark { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; color: #fff; background: var(--primary); }
     .brand b { display: block; font-size: 19px; letter-spacing: -.01em; }
     .brand small { display: block; font-size: 13px; color: var(--muted); margin-top: -2px; }
 
@@ -33,7 +31,7 @@
     .card { padding: 18px; }
     .step { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
     .step .n { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; flex: none;
-      color: var(--primary); background: color-mix(in srgb, var(--primary-2) 18%, transparent); }
+      color: var(--primary); background: var(--tint); }
     .sub { font-size: 14px; color: var(--muted); font-weight: 600; margin: 16px 0 8px; display: block; }
     .hint { color: var(--muted); font-size: 14px; margin: 10px 0 0; }
     .err { color: var(--bad); font-size: 14px; font-weight: 600; margin-top: 8px; }
@@ -44,35 +42,34 @@
       background: var(--field); border: 1px solid var(--stroke); transition: border-color .2s, box-shadow .2s;
     }
     textarea { min-height: 104px; resize: vertical; }
-    input:focus, textarea:focus { outline: none; border-color: var(--primary-2); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-2) 22%, transparent); }
+    input:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(0, 112, 242, .14); }
     ::placeholder { color: color-mix(in srgb, var(--muted) 75%, transparent); }
     .row { display: flex; gap: 10px; align-items: stretch; }
     .row > input, .row > textarea { flex: 1; }
     .mic { width: var(--tap); padding: 0; flex: none; color: var(--primary); }
     .mic.on { color: #fff; background: var(--bad); border-color: transparent; animation: pulse 1.2s var(--ease) infinite; }
-    @keyframes pulse { 50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--bad) 25%, transparent); } }
+    @keyframes pulse { 50% { box-shadow: 0 0 0 8px rgba(201, 25, 11, .18); } }
 
     /* ---- machine ---- */
-    .machine { margin-top: 12px; display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: var(--r-md);
-      background: color-mix(in srgb, var(--primary-2) 12%, var(--field)); border: 1px solid color-mix(in srgb, var(--primary-2) 30%, transparent); }
-    .machine .mi { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; color: var(--primary); background: var(--glass-strong); }
+    .machine { margin-top: 12px; display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: var(--r-md); background: var(--tint); border: 1px solid transparent; }
+    .machine .mi { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; color: var(--primary); background: #fff; }
     .machine b { display: block; font-size: 17px; }
     .machine span { color: var(--muted); font-size: 14px; }
-    .machine.unknown { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+    .machine.unknown { background: var(--accent-soft); }
     .machine.unknown .mi, .machine.unknown b { color: var(--accent); }
 
     /* ---- segmented control (iOS style) ---- */
-    .segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 5px; border-radius: 18px; }
+    .segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 16px; background: rgba(29, 45, 62, .06); }
     .segmented button { font: inherit; font-weight: 600; min-height: 48px; border: 0; border-radius: 14px; background: transparent; color: var(--muted);
       display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: background .25s var(--ease), color .25s, box-shadow .25s; }
-    .segmented button[aria-selected=true] { color: var(--text); background: var(--glass-strong); box-shadow: 0 1px 2px rgba(15,23,42,.08), 0 6px 16px -8px rgba(15,23,42,.25); }
+    .segmented button[aria-selected=true] { color: var(--text); background: #fff; box-shadow: 0 1px 2px rgba(29,45,62,.08), 0 4px 12px -6px rgba(29,45,62,.2); }
 
     /* ---- pillar chips ---- */
     .chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
     .chips button { min-height: 64px; padding: 6px 4px; flex-direction: column; gap: 2px; font-size: 16px; font-weight: 700; border-radius: var(--r-sm); }
     .chips small { display: block; font-weight: 500; font-size: 11px; line-height: 1.15; color: var(--muted); }
-    .chips button[aria-pressed=true] { color: var(--on-primary); border-color: transparent; background: linear-gradient(180deg, var(--primary-2), var(--primary)); }
-    .chips button[aria-pressed=true] small { color: inherit; opacity: .9; }
+    .chips button[aria-pressed=true] { color: var(--primary); background: var(--tint); border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
+    .chips button[aria-pressed=true] small { color: var(--primary); }
 
     /* ---- iOS toggle for safety ---- */
     .switch { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 12px 14px; border-radius: var(--r-md);
@@ -80,7 +77,7 @@
     .switch .icon { color: var(--accent); }
     .switch span { flex: 1; }
     .switch input { appearance: none; -webkit-appearance: none; width: 52px; height: 32px; border-radius: 99px; margin: 0; flex: none; cursor: pointer;
-      background: color-mix(in srgb, var(--muted) 35%, transparent); position: relative; transition: background .25s var(--ease); }
+      background: #d5dbe2; position: relative; transition: background .25s var(--ease); }
     .switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff;
       box-shadow: 0 2px 6px rgba(0,0,0,.25); transition: transform .25s var(--ease); }
     .switch input:checked { background: var(--accent); }
@@ -99,7 +96,7 @@
     .picks button { text-align: left; font: inherit; padding: 12px 16px; border-radius: var(--r-md); cursor: pointer; color: inherit;
       background: var(--field); border: 1px solid var(--stroke); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .picks button b { display: block; color: var(--primary); }
-    .picks button[aria-pressed=true] { border: 2px solid var(--primary-2); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-2) 18%, transparent); }
+    .picks button[aria-pressed=true] { background: var(--tint); border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
 
     /* ---- my kaizens list ---- */
     #mine-section h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
@@ -107,27 +104,24 @@
     .item { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 12px 14px; border-radius: var(--r-md); background: var(--field); border: 1px solid var(--stroke); }
     .item .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
     .item .s { font-size: 13px; font-weight: 700; white-space: nowrap; padding: 4px 10px; border-radius: 99px; }
-    .s.pending { color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
-    .s.error { color: var(--bad); background: color-mix(in srgb, var(--bad) 12%, transparent); white-space: normal; }
-    .s.done { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+    .s.pending { color: var(--warn); background: var(--warn-soft); }
+    .s.error { color: var(--bad); background: var(--bad-soft); white-space: normal; }
+    .s.done { color: var(--ok); background: var(--ok-soft); }
     .item .btn { min-height: 40px; padding: 0 12px; font-size: 14px; }
 
     /* ---- score card ---- */
-    .score { position: relative; overflow: hidden; }
-    .score::after { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; pointer-events: none;
-      background: linear-gradient(135deg, var(--primary-2), var(--accent)); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
     .score-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
     .score-head .pts { display: flex; align-items: center; gap: 10px; }
-    .score-head .pts .icon { color: var(--accent); }
+    .score-head .pts .icon { color: var(--primary); }
     .score-head b { font-size: 26px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
     .score-head span { color: var(--muted); font-size: 14px; text-align: right; }
     .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-    .badges span { font-size: 13px; font-weight: 600; padding: 5px 11px; border-radius: 99px; background: var(--field); border: 1px solid var(--stroke); }
+    .badges span { font-size: 13px; font-weight: 600; padding: 5px 11px; border-radius: 99px; color: var(--primary); background: var(--tint); }
     .top { margin: 12px 0 0; padding-left: 22px; color: var(--muted); font-size: 14px; }
 
     /* ---- AI ---- */
     #ai-draft { width: 100%; margin-bottom: 4px; }
-    #ai-draft .icon { color: var(--accent); }
+
 
     /* ---- bottom action bar ---- */
     footer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom));
@@ -137,7 +131,7 @@
     /* ---- toast ---- */
     #toast { position: fixed; left: 16px; right: 16px; bottom: calc(96px + env(safe-area-inset-bottom)); max-width: 520px; margin: 0 auto; z-index: 20;
       padding: 14px 18px; border-radius: 18px; font-weight: 600; text-align: center; color: #fff;
-      background: rgba(15, 23, 42, .82); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+      background: rgba(29, 45, 62, .88); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
       opacity: 0; transform: translateY(10px) scale(.98); transition: opacity .2s var(--ease), transform .25s var(--ease); pointer-events: none; }
     #toast.show { opacity: 1; transform: none; }
 
@@ -227,7 +221,7 @@
 
       <section class="glass card new-only">
         <h2 class="step"><span class="n">3</span>What did you see?</h2>
-        <button type="button" id="ai-draft" class="btn ghost" hidden><svg class="icon"><use href="#i-sparkles"/></svg><span class="label">Draft with AI from the photo</span></button>
+        <button type="button" id="ai-draft" class="btn soft block" hidden><svg class="icon"><use href="#i-sparkles"/></svg><span class="label">Draft with AI from the photo</span></button>
         <p id="ai-note" class="hint" hidden>AI draft: please check and correct before submitting.</p>
         <label class="sub" for="title">Short title *</label>
         <div class="row">

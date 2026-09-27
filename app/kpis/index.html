@@ -4,14 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Kaizen KPIs</title>
-  <script>
-    // follow the device's light/dark setting
-    window['sap-ui-config'] = { theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'sap_horizon_dark' : 'sap_horizon' }
-  </script>
-  <script id="sap-ui-bootstrap" src="https://ui5.sap.com/1.136.22/resources/sap-ui-core.js"
+  <script id="sap-ui-bootstrap" src="https://ui5.sap.com/1.136.22/resources/sap-ui-core.js" data-sap-ui-theme="sap_horizon"
     data-sap-ui-async="true" data-sap-ui-compat-version="edge" data-sap-ui-frame-options="trusted"
     data-sap-ui-resource-roots='{"kaizen.kpis": "./"}' data-sap-ui-on-init="module:sap/ui/core/ComponentSupport"></script>
   <style>html, body, body > div, #container, #container-uiarea { height: 100%; margin: 0; }</style>
+  <link rel="stylesheet" href="../fiori-glass.css">
+  <link rel="icon" href="../capture/icon.svg" type="image/svg+xml">
 </head>
 <body class="sapUiBody" id="content">
   <div data-sap-ui-component data-name="kaizen.kpis" data-id="container" data-settings='{"id": "kaizen.kpis"}' data-handle-validation="true" style="height: 100%"></div>
