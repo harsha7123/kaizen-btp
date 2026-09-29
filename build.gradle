@@ -1,13 +1,13 @@
 buildscript {
     ext.kotlin_version = '2.1.0'
-    // SAP BTP SDK for Android version (check SAP Help for latest available on the repo)
-    ext.sap_sdk_version = '26.1.2'
+    // SAP BTP SDK for Android version
+    ext.sap_sdk_version = '26.4.0'
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.9.1'
+        classpath 'com.android.tools.build:gradle:8.13.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }

@@ -12,6 +12,13 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         mavenLocal()
+        maven {
+            url "https://repositories.sap.com/maven/"
+            credentials {
+                username sap_maven_user
+                password sap_maven_password
+            }
+        }
     }
 }
 rootProject.name = "DroidX"
